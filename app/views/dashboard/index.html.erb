@@ -1,0 +1,147 @@
+<% content_for :header do %>
+  <h1 class="text-3xl font-bold tracking-tight text-gray-900">Tableau de bord</h1>
+<% end %>
+
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  <!-- Carte de statistiques: Taux de conformité -->
+  <div class="bg-white overflow-hidden shadow rounded-lg">
+    <div class="p-5">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+          <i class="fas fa-check-circle text-white text-xl"></i>
+        </div>
+        <div class="ml-5 w-0 flex-1">
+          <dl>
+            <dt class="text-sm font-medium text-gray-500 truncate">Taux de conformité</dt>
+            <dd>
+              <div class="text-lg font-medium text-gray-900"><%= number_to_percentage(@conforming_rate, precision: 1) %></div>
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-50 px-5 py-3">
+      <div class="text-sm">
+        <span class="font-medium text-blue-700">Basé sur <%= Analysis.where(status: 'completed').count %> analyses</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carte de statistiques: Analyses aujourd'hui -->
+  <div class="bg-white overflow-hidden shadow rounded-lg">
+    <div class="p-5">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+          <i class="fas fa-calendar-day text-white text-xl"></i>
+        </div>
+        <div class="ml-5 w-0 flex-1">
+          <dl>
+            <dt class="text-sm font-medium text-gray-500 truncate">Analyses aujourd'hui</dt>
+            <dd>
+              <div class="text-lg font-medium text-gray-900"><%= Analysis.where('created_at >= ?', Date.today).count %></div>
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-50 px-5 py-3">
+      <div class="text-sm">
+        <span class="font-medium text-green-700">
+          <% today_success_rate = Analysis.where('created_at >= ? AND status = ?', Date.today, 'completed').count > 0 ? 
+             (Analysis.where('created_at >= ? AND status = ? AND score >= ?', Date.today, 'completed', 0.85).count.to_f / 
+             Analysis.where('created_at >= ? AND status = ?', Date.today, 'completed').count * 100) : 0 %>
+          <%= number_to_percentage(today_success_rate, precision: 1) %> de conformité
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carte de statistiques: Composants surveillés -->
+  <div class="bg-white overflow-hidden shadow rounded-lg">
+    <div class="p-5">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
+          <i class="fas fa-microchip text-white text-xl"></i>
+        </div>
+        <div class="ml-5 w-0 flex-1">
+          <dl>
+            <dt class="text-sm font-medium text-gray-500 truncate">Composants surveillés</dt>
+            <dd>
+              <div class="text-lg font-medium text-gray-900"><%= @components.count %></div>
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-50 px-5 py-3">
+      <div class="text-sm">
+        <%= link_to components_path, class: "font-medium text-purple-700 hover:text-purple-900" do %>
+          Voir tous les composants <i class="fas fa-arrow-right ml-1"></i>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Analyses récentes -->
+<div class="mt-8">
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+      <div>
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Analyses récentes</h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">Les 10 dernières analyses effectuées</p>
+      </div>
+      <%= link_to analyses_path, class: "text-sm font-medium text-blue-600 hover:text-blue-500" do %>
+        Voir toutes les analyses <i class="fas fa-arrow-right ml-1"></i>
+      <% end %>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% if @recent_analyses.any? %>
+            <% @recent_analyses.each do |analysis| %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#<%= analysis.id %></td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= analysis_status_color(analysis.status) %>">
+                    <%= analysis.status %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <% if analysis.score %>
+                    <span class="<%= analysis.conforming? ? 'text-green-600' : 'text-red-600' %>">
+                      <%= number_to_percentage(analysis.score * 100, precision: 1) %>
+                    </span>
+                  <% else %>
+                    <span class="text-gray-400">-</span>
+                  <% end %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <%= analysis.created_at.strftime("%d/%m/%Y %H:%M") %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <%= link_to "Voir", analysis_path(analysis), class: "text-blue-600 hover:text-blue-900" %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                Aucune analyse récente
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div> 

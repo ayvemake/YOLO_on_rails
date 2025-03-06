@@ -1,0 +1,35 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Nouvelle analyse</h1>
+    <%= link_to "Retour aux analyses", analyses_path, class: "text-blue-600 hover:text-blue-800" %>
+  </div>
+  
+  <div class="bg-white rounded-lg shadow p-6">
+    <%= form_with(model: @analysis, local: true, class: "space-y-6") do |form| %>
+      <% if @analysis.errors.any? %>
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          <h2 class="font-bold mb-2">
+            <%= pluralize(@analysis.errors.count, "erreur") %> ont empêché cette analyse d'être enregistrée:
+          </h2>
+          <ul class="list-disc pl-5">
+            <% @analysis.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+      
+      <div>
+        <%= form.label :image, "Image à analyser", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.file_field :image, class: "mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm", accept: "image/*", required: true %>
+        <p class="mt-2 text-sm text-gray-500">
+          Sélectionnez une image du pacemaker à analyser. Formats acceptés: JPG, PNG.
+        </p>
+      </div>
+      
+      <div class="flex justify-end">
+        <%= form.submit "Lancer l'analyse", class: "bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" %>
+      </div>
+    <% end %>
+  </div>
+</div> 

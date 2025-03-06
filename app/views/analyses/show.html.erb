@@ -1,0 +1,287 @@
+<% content_for :header do %>
+  <div class="flex justify-between items-center">
+    <h1 class="text-3xl font-bold tracking-tight text-gray-900">Analyse #<%= @analysis.id %></h1>
+    <%= link_to analyses_path, class: "text-blue-600 hover:text-blue-900" do %>
+      <i class="fas fa-arrow-left mr-1"></i> Retour aux analyses
+    <% end %>
+  </div>
+<% end %>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+  <!-- Informations générales -->
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Informations générales</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Détails et résultats de l'analyse</p>
+    </div>
+    <div class="border-t border-gray-200">
+      <dl>
+        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Statut</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <span id="analysis-status" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= analysis_status_color(@analysis.status) %>">
+              <%= @analysis.status %>
+            </span>
+          </dd>
+        </div>
+        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Score de conformité</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <% if @analysis.score %>
+              <span id="analysis-score" class="text-lg font-bold <%= @analysis.conforming? ? 'text-green-600' : 'text-red-600' %>">
+                <%= number_to_percentage(@analysis.score * 100, precision: 1) %>
+              </span>
+              <span class="ml-2 text-xs text-gray-500">
+                (<%= @analysis.conforming? ? "Conforme" : "Non conforme" %>)
+              </span>
+            <% else %>
+              <span class="text-gray-400">En attente de résultats</span>
+            <% end %>
+          </dd>
+        </div>
+        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Temps de traitement</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <% 
+              # Accéder directement aux données JSON
+              processing_time = nil
+              begin
+                components_data = @analysis[:components]
+                if components_data.is_a?(Hash) || components_data.is_a?(ActiveSupport::HashWithIndifferentAccess)
+                  processing_time = components_data['processing_time'] || components_data[:processing_time]
+                  processing_time = processing_time.to_f if processing_time
+                end
+              rescue
+                processing_time = nil
+              end
+            %>
+            
+            <% if processing_time && processing_time > 0 %>
+              <%= processing_time.round(2) %> secondes
+            <% else %>
+              <span class="text-gray-400">-</span>
+            <% end %>
+          </dd>
+        </div>
+        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Date de création</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <%= @analysis.created_at.strftime("%d/%m/%Y à %H:%M:%S") %>
+          </dd>
+        </div>
+        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Composants détectés</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <%= @analysis.analysis_results.count %>
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Image analysée -->
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Image analysée</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Visualisation des composants détectés</p>
+    </div>
+    <div class="border-t border-gray-200 p-4">
+      <% if @analysis.result_image.attached? %>
+        <div class="relative">
+          <%= image_tag url_for(@analysis.result_image), class: "w-full h-auto rounded-lg" %>
+        </div>
+      <% elsif @analysis.image.attached? %>
+        <div class="relative">
+          <%= image_tag url_for(@analysis.image), class: "w-full h-auto rounded-lg" %>
+          <% if @analysis.status == 'processing' %>
+            <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+              <div class="text-white text-center">
+                <i class="fas fa-spinner fa-spin fa-3x mb-2"></i>
+                <p>Analyse en cours...</p>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="text-center py-8 text-gray-500">
+          <i class="fas fa-image fa-3x mb-2"></i>
+          <p>Aucune image disponible</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Résultats détaillés -->
+<div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+  <div class="px-4 py-5 sm:px-6">
+    <h3 class="text-lg leading-6 font-medium text-gray-900">Résultats détaillés</h3>
+    <p class="mt-1 max-w-2xl text-sm text-gray-500">Informations sur chaque composant détecté</p>
+  </div>
+  <div class="border-t border-gray-200">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Composant</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position X</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position Y</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confiance</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+          </tr>
+        </thead>
+        <tbody id="results-table" class="bg-white divide-y divide-gray-200">
+          <% if @analysis.analysis_results.any? %>
+            <% @analysis.analysis_results.each do |result| %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <%= result.component.name %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <%= result.position_x.round(2) %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <%= result.position_y.round(2) %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <% if result.raw_data && result.raw_data["confidence"] %>
+                    <%= number_to_percentage(result.raw_data["confidence"] * 100, precision: 1) %>
+                  <% else %>
+                    -
+                  <% end %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <span class="<%= result.conformity_score >= 0.85 ? 'text-green-600' : 'text-red-600' %>">
+                    <%= number_to_percentage(result.conformity_score * 100, precision: 1) %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                    <%= result.status == 'ok' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                    <%= result.status %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                <% if @analysis.status == 'pending' || @analysis.status == 'processing' %>
+                  <div class="flex justify-center items-center">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                    Analyse en cours...
+                  </div>
+                <% else %>
+                  Aucun résultat disponible
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%
+=begin %>
+<% if @analysis.verification && @analysis.verification["details"] %>
+  <!-- Détails de vérification -->
+  <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Détails de vérification</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Informations détaillées sur la vérification</p>
+    </div>
+    <div class="border-t border-gray-200 p-4">
+      <pre class="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm"><%= JSON.pretty_generate(@analysis.verification["details"]) %></pre>
+    </div>
+  </div>
+<% end %>
+<%
+=end %>
+
+<div data-controller="analysis" data-analysis-id="<%= @analysis.id %>">
+  <div class="mb-4">
+    <h3 class="text-lg font-semibold">Statut de l'analyse</h3>
+    <p class="text-sm text-gray-600">
+      Statut: <span data-analysis-target="status" class="font-medium <%= @analysis.status == 'completed' ? 'text-green-600' : (@analysis.status == 'failed' ? 'text-red-600' : 'text-blue-600') %>"><%= @analysis.status %></span>
+    </p>
+    
+    <!-- Barre de progression -->
+    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+      <div data-analysis-target="progress" class="h-2.5 rounded-full <%= @analysis.status == 'completed' ? 'bg-green-500' : (@analysis.status == 'failed' ? 'bg-red-500' : 'bg-blue-500') %>" style="width: <%= @analysis.status == 'completed' ? '100%' : '50%' %>"></div>
+    </div>
+  </div>
+  
+  <div data-analysis-target="result" id="analysis-result-container-<%= @analysis.id %>">
+    <% if @analysis.status == 'completed' %>
+      <%= render 'analysis_result', analysis: @analysis %>
+    <% else %>
+      <div class="p-4 bg-blue-50 rounded-lg">
+        <p class="text-blue-700">
+          <i class="fas fa-spinner fa-spin mr-2"></i>
+          Analyse en cours...
+        </p>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%= javascript_tag do %>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Abonnement au canal WebSocket pour les mises à jour en temps réel
+    App.analysis = App.cable.subscriptions.create({ channel: "AnalysisChannel" }, {
+      received: function(data) {
+        if (data.analysis_id == <%= @analysis.id %>) {
+          console.log("Received update for analysis #<%= @analysis.id %>:", data);
+          
+          // Mettre à jour le statut
+          if (data.status) {
+            const statusElement = document.getElementById('analysis-status');
+            if (statusElement) {
+              statusElement.textContent = data.status;
+              
+              // Mettre à jour la classe de couleur
+              statusElement.className = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full';
+              if (data.status === 'completed') {
+                statusElement.classList.add('bg-green-100', 'text-green-800');
+              } else if (data.status === 'processing') {
+                statusElement.classList.add('bg-blue-100', 'text-blue-800');
+              } else if (data.status === 'failed') {
+                statusElement.classList.add('bg-red-100', 'text-red-800');
+              } else {
+                statusElement.classList.add('bg-gray-100', 'text-gray-800');
+              }
+            }
+          }
+          
+          // Mettre à jour le score
+          if (data.score !== undefined) {
+            const scoreElement = document.getElementById('analysis-score');
+            if (scoreElement) {
+              const scorePercentage = (data.score * 100).toFixed(1) + '%';
+              scoreElement.textContent = scorePercentage;
+              
+              // Mettre à jour la couleur
+              if (data.score >= 0.85) {
+                scoreElement.classList.remove('text-red-600');
+                scoreElement.classList.add('text-green-600');
+              } else {
+                scoreElement.classList.remove('text-green-600');
+                scoreElement.classList.add('text-red-600');
+              }
+            }
+          }
+          
+          // Si l'analyse est terminée, recharger la page pour afficher tous les résultats
+          if (data.status === 'completed' || data.status === 'failed') {
+            setTimeout(function() {
+              location.reload();
+            }, 1000);
+          }
+        }
+      }
+    });
+  });
+<% end %> 

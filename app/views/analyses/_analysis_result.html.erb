@@ -1,0 +1,52 @@
+<div id="analysis-result-<%= analysis.id %>" class="analysis-result">
+  <div class="mb-4">
+    <h3 class="text-lg font-semibold">Résultat de l'analyse</h3>
+    <p class="text-sm text-gray-600">
+      Statut: <span class="font-medium <%= analysis.status == 'completed' ? 'text-green-600' : 'text-red-600' %>"><%= analysis.status %></span>
+    </p>
+    <% if analysis.score.present? %>
+      <p class="text-sm text-gray-600">
+        Score: <span class="font-medium"><%= (analysis.score * 100).round(2) %>%</span>
+      </p>
+    <% end %>
+  </div>
+  
+  <% if analysis.result_image.attached? %>
+    <div class="mb-4">
+      <h4 class="text-md font-semibold mb-2">Image résultante</h4>
+      <%= image_tag url_for(analysis.result_image), class: "max-w-full h-auto rounded-lg shadow-md" %>
+    </div>
+  <% end %>
+  
+  <% if analysis.analysis_results.any? %>
+    <div class="mb-4">
+      <h4 class="text-md font-semibold mb-2">Composants détectés</h4>
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white rounded-lg overflow-hidden">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Composant</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <% analysis.analysis_results.each do |result| %>
+              <tr>
+                <td class="px-4 py-2 whitespace-nowrap"><%= result.component.name %></td>
+                <td class="px-4 py-2 whitespace-nowrap">X: <%= result.position_x.round(2) %>, Y: <%= result.position_y.round(2) %></td>
+                <td class="px-4 py-2 whitespace-nowrap"><%= (result.conformity_score * 100).round(2) %>%</td>
+                <td class="px-4 py-2 whitespace-nowrap">
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= result.status == 'ok' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                    <%= result.status %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</div> 
