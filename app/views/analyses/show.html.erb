@@ -228,60 +228,8 @@
   </div>
 </div>
 
-<%= javascript_tag do %>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Abonnement au canal WebSocket pour les mises à jour en temps réel
-    App.analysis = App.cable.subscriptions.create({ channel: "AnalysisChannel" }, {
-      received: function(data) {
-        if (data.analysis_id == <%= @analysis.id %>) {
-          console.log("Received update for analysis #<%= @analysis.id %>:", data);
-          
-          // Mettre à jour le statut
-          if (data.status) {
-            const statusElement = document.getElementById('analysis-status');
-            if (statusElement) {
-              statusElement.textContent = data.status;
-              
-              // Mettre à jour la classe de couleur
-              statusElement.className = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full';
-              if (data.status === 'completed') {
-                statusElement.classList.add('bg-green-100', 'text-green-800');
-              } else if (data.status === 'processing') {
-                statusElement.classList.add('bg-blue-100', 'text-blue-800');
-              } else if (data.status === 'failed') {
-                statusElement.classList.add('bg-red-100', 'text-red-800');
-              } else {
-                statusElement.classList.add('bg-gray-100', 'text-gray-800');
-              }
-            }
-          }
-          
-          // Mettre à jour le score
-          if (data.score !== undefined) {
-            const scoreElement = document.getElementById('analysis-score');
-            if (scoreElement) {
-              const scorePercentage = (data.score * 100).toFixed(1) + '%';
-              scoreElement.textContent = scorePercentage;
-              
-              // Mettre à jour la couleur
-              if (data.score >= 0.85) {
-                scoreElement.classList.remove('text-red-600');
-                scoreElement.classList.add('text-green-600');
-              } else {
-                scoreElement.classList.remove('text-green-600');
-                scoreElement.classList.add('text-red-600');
-              }
-            }
-          }
-          
-          // Si l'analyse est terminée, recharger la page pour afficher tous les résultats
-          if (data.status === 'completed' || data.status === 'failed') {
-            setTimeout(function() {
-              location.reload();
-            }, 1000);
-          }
-        }
-      }
-    });
-  });
-<% end %> 
+<div class="mt-4">
+  <button data-action="analysis#refreshStatus" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+    <i class="fas fa-sync-alt mr-2"></i> Rafraîchir le statut
+  </button>
+</div> 

@@ -30,6 +30,18 @@ class AnalysesController < ApplicationController
     end
   end
   
+  def status
+    @analysis = Analysis.find(params[:id])
+    render json: {
+      id: @analysis.id,
+      status: @analysis.status,
+      score: @analysis.score,
+      has_result_image: @analysis.result_image.attached?,
+      result_image_url: @analysis.result_image.attached? ? url_for(@analysis.result_image) : nil,
+      results_count: @analysis.analysis_results.count
+    }
+  end
+  
   private
   
   def set_analysis

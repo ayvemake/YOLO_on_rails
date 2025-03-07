@@ -1,7 +1,7 @@
 class AnalysisJob < ApplicationJob
   queue_as :default
   
-  def perform(analysis_id)
+  def perform(analysis_id, retry_count = 0)
     analysis = Analysis.find(analysis_id)
     analysis.update(status: 'processing')
     
@@ -44,19 +44,38 @@ class AnalysisJob < ApplicationJob
           }
         )
       else
-        analysis.update(status: 'failed')
-        ActionCable.server.broadcast(
-          "analysis_channel",
-          { 
-            analysis_id: analysis.id,
-            status: 'failed',
-            message: "L'analyse a échoué"
-          }
-        )
+        # Si l'analyse a échoué mais que nous n'avons pas atteint le nombre maximum de tentatives
+        if retry_count < 3
+          Rails.logger.info("L'analyse a échoué, nouvelle tentative #{retry_count + 1}/3 dans 5 secondes...")
+          
+          # Notifier les clients que nous réessayons
+          ActionCable.server.broadcast(
+            "analysis_channel",
+            { 
+              analysis_id: analysis.id,
+              status: 'processing',
+              message: "Nouvelle tentative d'analyse (#{retry_count + 1}/3)..."
+            }
+          )
+          
+          # Réessayer après 5 secondes
+          AnalysisJob.set(wait: 5.seconds).perform_later(analysis_id, retry_count + 1)
+        else
+          # Si nous avons atteint le nombre maximum de tentatives, marquer l'analyse comme échouée
+          analysis.update(status: 'failed')
+          ActionCable.server.broadcast(
+            "analysis_channel",
+            { 
+              analysis_id: analysis.id,
+              status: 'failed',
+              message: "L'analyse a échoué après 3 tentatives"
+            }
+          )
+        end
       end
     rescue => e
       Rails.logger.error("Erreur lors de l'analyse: #{e.message}")
-      analysis.update(status: 'failed', timestamp: Time.now)
+      analysis.update(status: 'failed')
       ActionCable.server.broadcast(
         "analysis_channel",
         { 
@@ -132,71 +151,88 @@ class AnalysisJob < ApplicationJob
   end
   
   def send_to_fastapi_with_curl(analysis)
+    require 'net/http'
+    require 'uri'
     require 'tempfile'
-    require 'json'
+    
+    # Créer un fichier temporaire pour l'image redimensionnée
+    temp_file = Tempfile.new(['image', '.jpg'])
     
     begin
-      # Créer un fichier temporaire pour l'image
-      temp_file = Tempfile.new(['image', '.jpg'])
-      temp_file.binmode
-      
       # Télécharger l'image
       image_data = analysis.image.download
       
-      # Vérifier la taille de l'image
-      if image_data.size > 900 * 1024  # 900 KB
-        Rails.logger.info("L'image est trop grande (#{image_data.size} octets), réduction de la taille...")
-        
-        # Utiliser ImageMagick directement via la ligne de commande
-        original_temp = Tempfile.new(['original', '.jpg'])
-        original_temp.binmode
-        original_temp.write(image_data)
-        original_temp.close
-        
-        # Redimensionner l'image avec convert (ImageMagick)
-        system("convert #{original_temp.path} -resize 50% #{temp_file.path}")
-        
-        # Vérifier si la conversion a réussi
-        unless File.exist?(temp_file.path) && File.size(temp_file.path) > 0
-          # Si la conversion échoue, utiliser l'image originale
-          Rails.logger.warn("Échec du redimensionnement, utilisation de l'image originale")
-          temp_file.write(image_data)
-        end
-        
-        original_temp.unlink
-      else
-        # Utiliser l'image originale si elle est assez petite
+      # Redimensionner l'image avec ImageMagick
+      original_temp = Tempfile.new(['original', '.jpg'])
+      original_temp.binmode
+      original_temp.write(image_data)
+      original_temp.close
+      
+      # Redimensionner l'image
+      system("convert #{original_temp.path} -resize 25% #{temp_file.path}")
+      
+      # Vérifier si la conversion a réussi
+      unless File.exist?(temp_file.path) && File.size(temp_file.path) > 0
+        Rails.logger.warn("Échec du redimensionnement, utilisation de l'image originale")
+        temp_file.binmode
         temp_file.write(image_data)
+        temp_file.close
       end
       
-      temp_file.close
+      # Créer une requête multipart
+      uri = URI.parse("http://localhost:8000/analyze")
       
-      # Construire la commande curl
-      cmd = [
-        "curl",
-        "-X", "POST",
-        "http://localhost:8000/analyze",
-        "-H", "accept: application/json",
-        "-F", "file=@#{temp_file.path}",
-        "-F", "confidence=0.5",
-        "-F", "tolerance=0.2",
-        "-v" # Verbose pour le débogage
-      ].join(' ')
+      # Créer une requête HTTP POST
+      request = Net::HTTP::Post.new(uri)
       
-      # Exécuter la commande
-      Rails.logger.info("Exécution de la commande curl: #{cmd}")
-      output = `#{cmd}`
-      Rails.logger.info("Sortie de curl: #{output[0..200]}...")
+      # Lire le fichier image
+      file_data = File.read(temp_file.path)
       
-      # Analyser la réponse JSON
-      JSON.parse(output)
+      # Générer une frontière (boundary) unique pour le multipart
+      boundary = "AaB03x"
+      
+      # Définir les en-têtes de la requête
+      request["Content-Type"] = "multipart/form-data; boundary=#{boundary}"
+      
+      # Construire le corps de la requête multipart
+      post_body = []
+      post_body << "--#{boundary}\r\n"
+      post_body << "Content-Disposition: form-data; name=\"file\"; filename=\"image.jpg\"\r\n"
+      post_body << "Content-Type: image/jpeg\r\n\r\n"
+      post_body << file_data
+      post_body << "\r\n--#{boundary}\r\n"
+      post_body << "Content-Disposition: form-data; name=\"confidence\"\r\n\r\n"
+      post_body << "0.5"
+      post_body << "\r\n--#{boundary}\r\n"
+      post_body << "Content-Disposition: form-data; name=\"tolerance\"\r\n\r\n"
+      post_body << "0.2"
+      post_body << "\r\n--#{boundary}--\r\n"
+      
+      # Définir le corps de la requête
+      request.body = post_body.join
+      
+      # Envoyer la requête
+      response = Net::HTTP.start(uri.hostname, uri.port) do |http|
+        http.request(request)
+      end
+      
+      # Vérifier si la requête a réussi
+      if response.code == "200"
+        # Analyser la réponse JSON
+        JSON.parse(response.body)
+      else
+        Rails.logger.error("La requête a échoué avec le code: #{response.code}")
+        Rails.logger.error("Réponse: #{response.body}")
+        nil
+      end
     rescue => e
-      Rails.logger.error("Erreur lors de l'envoi à FastAPI via curl: #{e.message}")
+      Rails.logger.error("Erreur lors de l'envoi à FastAPI: #{e.message}")
       Rails.logger.error(e.backtrace.join("\n"))
       nil
     ensure
-      # Supprimer le fichier temporaire
-      temp_file.unlink if temp_file
+      # Supprimer les fichiers temporaires
+      temp_file.unlink if temp_file && temp_file.path
+      original_temp.unlink if defined?(original_temp) && original_temp && original_temp.path
     end
   end
   

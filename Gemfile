@@ -75,3 +75,5 @@ gem "tailwindcss-rails", "~> 4.2"
 gem 'multipart-post'
 
 gem 'mini_magick'
+
+gem 'ruby-vips', '~> 2.1'

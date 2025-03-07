@@ -8,7 +8,11 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root 'dashboard#index'
 
-  resources :analyses, only: [:index, :show, :new, :create]
+  resources :analyses, only: [:index, :show, :new, :create] do
+    member do
+      get :status
+    end
+  end
   resources :components
   
   namespace :api do
