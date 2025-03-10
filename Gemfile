@@ -2,6 +2,9 @@ source "https://rubygems.org"
 
 ruby "3.2.2"
 
+# Charger dotenv en premier pour les variables d'environnement
+gem 'dotenv-rails', groups: [:development, :test]
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.1.3"
 
@@ -77,3 +80,7 @@ gem 'multipart-post'
 gem 'mini_magick'
 
 gem 'ruby-vips', '~> 2.1'
+
+# Ajouter ces lignes à votre Gemfile
+gem 'sidekiq', '~> 7.1'
+gem 'redis', '~> 5.0'

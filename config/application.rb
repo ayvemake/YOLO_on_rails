@@ -23,5 +23,8 @@ module PacemakerVisionNew
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Utiliser Sidekiq comme adaptateur de file d'attente par défaut
+    config.active_job.queue_adapter = :sidekiq
   end
 end

@@ -2,15 +2,12 @@ class AnalysesController < ApplicationController
   before_action :set_analysis, only: [:show]
   
   def index
-    @analyses = Analysis.order(created_at: :desc).page(params[:page]).per(20)
+    @analyses = Analysis.order(created_at: :desc).page(params[:page]).per(10)
   end
   
   def show
-    # L'analyse est déjà chargée par le before_action
-    respond_to do |format|
-      format.html
-      format.json { render json: @analysis.summary }
-    end
+    # La vue sera mise à jour via WebSocket
+    @websocket_url = AiService.websocket_url
   end
   
   def new
@@ -19,12 +16,18 @@ class AnalysesController < ApplicationController
   
   def create
     @analysis = Analysis.new(analysis_params)
-    @analysis.status = 'pending'
+    @analysis.status = :pending
     
     if @analysis.save
-      # Envoyer l'image à l'API FastAPI pour analyse
-      AnalysisJob.perform_later(@analysis.id)
-      redirect_to @analysis, notice: 'Analyse en cours de traitement.'
+      begin
+        # Envoyer l'image à l'API FastAPI en arrière-plan
+        AnalysisJob.perform_later(@analysis)
+        redirect_to @analysis, notice: 'Analyse démarrée. Les résultats se mettront à jour en temps réel.'
+      rescue => e
+        Rails.logger.error("Erreur lors du lancement de l'analyse: #{e.message}")
+        @analysis.update(status: :failed)
+        redirect_to @analysis, alert: "Erreur lors du lancement de l'analyse. Veuillez réessayer."
+      end
     else
       render :new
     end
@@ -36,8 +39,8 @@ class AnalysesController < ApplicationController
       id: @analysis.id,
       status: @analysis.status,
       score: @analysis.score,
-      has_result_image: @analysis.result_image.attached?,
-      result_image_url: @analysis.result_image.attached? ? url_for(@analysis.result_image) : nil,
+      has_result_image: @analysis.result_image.try(:attached?),
+      result_image_url: @analysis.result_image.try(:attached?) ? url_for(@analysis.result_image) : nil,
       results_count: @analysis.analysis_results.count
     }
   end

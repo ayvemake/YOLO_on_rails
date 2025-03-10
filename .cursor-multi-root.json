@@ -1,0 +1,23 @@
+{
+  "rootFolders": [
+    ".",
+    "./backend"
+  ],
+  "settings": {
+    "projectName": "Pacemaker Vision",
+    "pythonPath": {
+      ".": "./venv/bin/python",
+      "./backend": "./backend/venv/bin/python"
+    },
+    "contexts": {
+      "rails": {
+        "folders": ["."],
+        "filePatterns": ["*.rb", "*.erb", "*.yml", "*.js"]
+      },
+      "python": {
+        "folders": ["./backend"],
+        "filePatterns": ["*.py", "*.yml", "*.json"]
+      }
+    }
+  }
+} 

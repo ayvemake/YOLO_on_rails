@@ -1,0 +1,63 @@
+{
+  "rules": {
+    "code_style": {
+      "ruby": {
+        "indentation": 2,
+        "quotes": "single",
+        "hash_syntax": "1.9",
+        "method_naming": "snake_case",
+        "class_naming": "CamelCase",
+        "file_naming": "snake_case",
+        "prefer_each_over_for": true,
+        "prefer_unless_over_negative_if": true,
+        "prefer_guard_clauses": true
+      },
+      "html_erb": {
+        "indentation": 2,
+        "max_line_length": 100
+      },
+      "javascript": {
+        "indentation": 2,
+        "quotes": "single",
+        "semicolons": true
+      },
+      "css": {
+        "indentation": 2
+      }
+    },
+    "best_practices": {
+      "ruby_on_rails": {
+        "follow_mvc": true,
+        "use_concerns_for_shared_code": true,
+        "secure_params": true,
+        "use_scopes_in_models": true,
+        "slim_controllers": true,
+        "use_service_objects_for_complex_logic": true,
+        "follow_restful_conventions": true
+      },
+      "database": {
+        "use_indexes_appropriately": true,
+        "avoid_n_plus_one": true,
+        "use_transactions_when_needed": true
+      },
+      "general": {
+        "dry_principle": true,
+        "solid_principles": true,
+        "comment_complex_logic": true,
+        "prioritize_readability": true
+      }
+    },
+    "documentation": {
+      "required_for_public_methods": true,
+      "explain_complex_algorithms": true,
+      "include_examples_where_helpful": true,
+      "comment_format": "# Comment text"
+    },
+    "testing": {
+      "write_tests_for_new_features": true,
+      "test_happy_and_sad_paths": true,
+      "use_factories_for_test_data": true,
+      "avoid_testing_implementation_details": true
+    }
+  }
+} 

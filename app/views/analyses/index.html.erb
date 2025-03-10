@@ -65,7 +65,22 @@
   
   <% if @analyses.any? %>
     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-      <%= paginate @analyses, theme: 'tailwind' %>
+      <div class="flex items-center justify-between">
+        <div class="flex-1 flex justify-between sm:hidden">
+          <%= link_to_prev_page @analyses, 'Précédent', class: 'relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50' %>
+          <%= link_to_next_page @analyses, 'Suivant', class: 'ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50' %>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm text-gray-700">
+              Affichage de <span class="font-medium"><%= @analyses.offset_value + 1 %></span> à <span class="font-medium"><%= @analyses.offset_value + @analyses.length %></span> sur <span class="font-medium"><%= @analyses.total_count %></span> analyses
+            </p>
+          </div>
+          <div>
+            <%= paginate @analyses %>
+          </div>
+        </div>
+      </div>
     </div>
   <% end %>
 </div> 

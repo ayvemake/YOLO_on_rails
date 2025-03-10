@@ -1,0 +1,12 @@
+---
+:concurrency: 5
+:timeout: 30
+:verbose: false
+:queues:
+  - default
+  - active_storage_analysis
+  - mailers
+development:
+  :concurrency: 5
+production:
+  :concurrency: 10 

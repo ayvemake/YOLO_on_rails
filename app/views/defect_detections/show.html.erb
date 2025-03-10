@@ -1,0 +1,86 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Résultats de la détection</h1>
+    <%= link_to "Nouvelle analyse", new_defect_detection_path, class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" %>
+  </div>
+  
+  <% if flash[:notice] %>
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
+      <span class="block sm:inline"><%= flash[:notice] %></span>
+    </div>
+  <% end %>
+  
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Détails de l'analyse</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Image analysée le <%= @defect_detection.created_at.strftime("%d/%m/%Y à %H:%M") %></p>
+    </div>
+    
+    <div class="border-t border-gray-200">
+      <div class="px-4 py-5 sm:p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 class="text-md font-medium mb-2">Image originale</h4>
+            <% if @defect_detection.image.attached? %>
+              <%= image_tag @defect_detection.image, class: "w-full rounded-lg border border-gray-200" %>
+            <% else %>
+              <div class="bg-gray-100 p-4 rounded-lg text-center text-gray-500">Image non disponible</div>
+            <% end %>
+          </div>
+          
+          <div>
+            <h4 class="text-md font-medium mb-2">Image annotée</h4>
+            <% if @defect_detection.annotated_image_data %>
+              <img src="<%= @defect_detection.annotated_image_data %>" class="w-full rounded-lg border border-gray-200" alt="Image annotée">
+            <% else %>
+              <div class="bg-gray-100 p-4 rounded-lg text-center text-gray-500">Image annotée non disponible</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="mt-8">
+    <% if @defect_detection.has_defects? %>
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-lg font-medium mb-2">Résumé des défauts</h3>
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type de défaut</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% @defect_detection.defects_by_class.each do |class_name, count| %>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= class_name %></td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= count %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="mt-6">
+          <h3 class="text-lg font-medium mb-2">Détections individuelles</h3>
+          <div class="space-y-2">
+            <% @defect_detection.result['detections'].each_with_index do |detection, index| %>
+              <div class="bg-gray-50 p-3 rounded-lg">
+                <p class="font-medium"><%= detection['class_name'] %> #<%= index + 1 %></p>
+                <p class="text-sm text-gray-600">Confiance: <%= (detection['confidence'] * 100).round(1) %>%</p>
+                <p class="text-sm text-gray-600">Position: <%= detection['bbox'].join(', ') %></p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <div class="bg-gray-50 p-6 rounded-lg text-center">
+          <p class="text-gray-600">Aucun défaut détecté sur cette image.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div> 

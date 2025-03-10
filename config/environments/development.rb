@@ -69,8 +69,20 @@ Rails.application.configure do
   # config.action_view.annotate_rendered_view_with_filenames = true
 
   # Uncomment if you wish to allow Action Cable access from any origin.
-  # config.action_cable.disable_request_forgery_protection = true
+  config.action_cable.disable_request_forgery_protection = true
+  config.action_cable.allowed_request_origins = [/http:\/\/*/, /https:\/\/*/]
 
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Configurer Active Job pour utiliser Sidekiq
+  config.active_job.queue_adapter = :sidekiq
+
+  # Configurer l'hôte par défaut pour les URL
+  config.action_controller.default_url_options = { host: 'localhost', port: 3000 }
+  Rails.application.routes.default_url_options = { host: 'localhost', port: 3000 }
+
+  # Pour Active Storage
+  config.active_storage.service = :local
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
 end

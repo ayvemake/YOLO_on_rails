@@ -13,3 +13,41 @@
  *= require_tree .
  *= require_self
  */
+
+/* Styles pour le curseur MCP */
+.cursor-copy {
+  cursor: copy;
+}
+
+.cursor-move {
+  cursor: move;
+}
+
+.cursor-no-drop {
+  cursor: no-drop;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+.cursor-grab {
+  cursor: grab;
+}
+
+.cursor-grabbing {
+  cursor: grabbing;
+}
+
+.cursor-zoom-in {
+  cursor: zoom-in;
+}
+
+.cursor-zoom-out {
+  cursor: zoom-out;
+}
+
+/* Styles personnalisés pour votre application */
+.cursor-mcp {
+  cursor: url('path/to/mcp-cursor.png'), auto;
+}
