@@ -103,11 +103,18 @@ class AnalysisJob < ApplicationJob
 
   def create_analysis_results(analysis, data)
     (data['detections'] || []).each do |detection|
+      # Find or create the component based on the class_name
+      component = Component.find_or_create_by(name: detection['class_name'])
+      
+      # Create the analysis result with the correct attributes
       analysis.analysis_results.create!(
-        category: detection['class_name'],
-        confidence: detection['confidence'],
-        status: detection['is_defective'] ? :defect : :ok,
-        bbox_coordinates: detection['bbox']
+        component: component,
+        position_x: detection['bbox'][0],
+        position_y: detection['bbox'][1],
+        rotation: 0.0, # Default value since YOLO doesn't provide rotation
+        conformity_score: detection['confidence'],
+        status: detection['is_defective'] ? :not_ok : :ok,
+        raw_data: detection
       )
     end
   end
@@ -131,6 +138,9 @@ class AnalysisJob < ApplicationJob
           filename: "result_#{analysis.id}.jpg",
           content_type: 'image/jpeg'
         )
+        
+        # Log success
+        Rails.logger.info "Successfully downloaded and attached result image for analysis ##{analysis.id}"
         
         temp_file.close
         temp_file.unlink

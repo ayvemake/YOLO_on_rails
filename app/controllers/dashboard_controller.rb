@@ -1,5 +1,7 @@
 class DashboardController < ApplicationController
   def index
+    @latest_metrics = Analysis.successful.last&.api_data
+    @analyses = Analysis.includes(:component).order(created_at: :desc).limit(5)
     @recent_analyses = Analysis.order(created_at: :desc).limit(10)
     @components = Component.all
     @conforming_rate = calculate_conforming_rate

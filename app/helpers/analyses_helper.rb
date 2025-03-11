@@ -13,4 +13,19 @@ module AnalysesHelper
       'bg-gray-100 text-gray-800'
     end
   end
+
+  def format_api_data_value(key, value)
+    case key
+    when /time/i
+      "#{value} ms"
+    when /score|confidence|precision|recall|map/i
+      number_to_percentage(value * 100, precision: 1)
+    when /count|size|number/i
+      number_with_delimiter(value)
+    when /date/i
+      value.is_a?(String) ? value : Time.at(value.to_i).strftime("%d/%m/%Y %H:%M")
+    else
+      value.is_a?(Array) ? value.join(", ") : value.to_s
+    end
+  end
 end 

@@ -1,35 +1,56 @@
 class Analysis < ApplicationRecord
+  belongs_to :component, optional: true
   has_one_attached :image
   has_one_attached :result_image
   has_many :analysis_results, dependent: :destroy
   
   # Définir les statuts possibles
-  enum status: { pending: 0, processing: 1, completed: 2, failed: 3 }
+  enum status: {
+    pending: 'pending',
+    processing: 'processing',
+    completed: 'completed',
+    failed: 'failed'
+  }
   
   # Valider la présence de l'image
   validates :image, presence: true
   
   # Scope pour récupérer les analyses récentes
-  scope :recent, -> { order(created_at: :desc).limit(10) }
+  scope :recent, -> { order(created_at: :desc) }
+  
+  scope :successful, -> { 
+    where(status: 'completed')
+    .where("api_data->>'success' = ?", 'true')
+  }
+  
+  scope :with_detections, -> { 
+    where("api_data->>'detections' IS NOT NULL")
+    .where("jsonb_array_length(api_data->'detections') > 0")
+  }
   
   # Seuil de conformité (peut être ajusté selon vos besoins)
   CONFORMITY_THRESHOLD = 0.85
   
   def conforming?
-    return false unless score.present?
+    return false unless completed? && api_data.present?
     
-    # Si l'API retourne des détections dans api_data
-    if api_data.present? && api_data['detections'].present?
-      # Vérifier si aucune détection n'est défectueuse
-      !api_data['detections'].any? { |d| d['is_defective'] }
-    else
-      # Sinon, utiliser le score directement
-      score >= CONFORMITY_THRESHOLD
-    end
+    score = api_data["score"].to_f
+    score >= 0.5 # seuil de conformité à 50%
   end
   
   def processing_time
-    api_data&.dig('processing_time')
+    return nil unless api_data&.dig("metrics", "processing", "total")
+    api_data["metrics"]["processing"]["total"]
+  end
+  
+  def detection_count
+    return 0 unless api_data&.dig("detections")
+    api_data["detections"].size
+  end
+  
+  def primary_detection
+    return nil unless api_data&.dig("detections")&.any?
+    api_data["detections"].first["class_name"]
   end
   
   def detections
@@ -45,11 +66,11 @@ class Analysis < ApplicationRecord
   end
   
   def defect_count
-    defects.count
+    analysis_results.where(status: :not_ok).count
   end
   
   def total_components
-    detections.count
+    analysis_results.count
   end
   
   def conformity_rate
@@ -67,4 +88,32 @@ class Analysis < ApplicationRecord
     'SCRATCH',
     'SEZ BURNT'
   ].freeze
+  
+  def self.success_rate
+    total = completed.count
+    return 0 if total.zero?
+    
+    successful.count.to_f / total * 100
+  end
+  
+  def self.average_processing_time
+    successful
+      .where("api_data->>'metrics' IS NOT NULL")
+      .map { |a| a.processing_time_in_seconds }
+      .compact
+      .then { |times| times.any? ? (times.sum / times.size).round(4) : nil }
+  end
+
+  def processing_time_in_seconds
+    return nil unless api_data&.dig("metrics", "processing", "total")
+    
+    # Enlever le 's' et convertir en float
+    time_str = api_data["metrics"]["processing"]["total"].to_s
+    time_str.gsub('s', '').to_f
+  end
+
+  def processing_time_formatted
+    return nil unless processing_time_in_seconds
+    "#{processing_time_in_seconds}s"
+  end
 end 

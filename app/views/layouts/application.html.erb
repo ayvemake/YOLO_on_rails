@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-
-    <%# Temporairement commenté jusqu'à ce que Tailwind soit correctement installé %>
-    <%#= stylesheet_link_tag "tailwind", "inter-font", "data-turbo-track": "reload" %>
     
     <%# Utiliser le CDN de Tailwind en attendant l'installation correcte %>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,8 +13,8 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     
     <style>
       body {
@@ -26,81 +23,17 @@
     </style>
   </head>
 
-  <body class="h-full">
-    <div class="min-h-full">
-      <!-- Navigation -->
-      <nav class="bg-blue-600">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div class="flex h-16 items-center justify-between">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <span class="text-white text-xl font-bold">Pacemaker Vision</span>
-              </div>
-              <div class="hidden md:block">
-                <div class="ml-10 flex items-baseline space-x-4">
-                  <%= link_to "Tableau de bord", root_path, class: "#{current_page?(root_path) ? 'bg-blue-700 text-white' : 'text-white hover:bg-blue-500'} rounded-md px-3 py-2 text-sm font-medium" %>
-                  <%= link_to "Analyses", analyses_path, class: "#{current_page?(analyses_path) ? 'bg-blue-700 text-white' : 'text-white hover:bg-blue-500'} rounded-md px-3 py-2 text-sm font-medium" %>
-                  <%= link_to "Composants", components_path, class: "#{controller_name == 'components' ? 'bg-blue-700 text-white' : 'text-white hover:bg-blue-500'} rounded-md px-3 py-2 text-sm font-medium" %>
-                </div>
-              </div>
-            </div>
-            <div class="hidden md:block">
-              <div class="ml-4 flex items-center md:ml-6">
-                <%= link_to new_analysis_path, class: "bg-white hover:bg-gray-100 text-blue-600 font-semibold py-2 px-4 rounded-md shadow-sm" do %>
-                  <i class="fas fa-plus mr-2"></i> Nouvelle analyse
-                <% end %>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <!-- Page header -->
+  <body class="bg-gray-100 min-h-screen">
+    <%= render 'shared/navbar' %>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <% if content_for?(:header) %>
-        <header class="bg-white shadow">
-          <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <%= yield :header %>
-          </div>
-        </header>
-      <% end %>
-
-      <!-- Flash messages -->
-      <% if notice %>
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-4">
-          <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-md">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <i class="fas fa-check-circle text-green-400"></i>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm text-green-700"><%= notice %></p>
-              </div>
-            </div>
-          </div>
+        <div class="mb-6">
+          <%= yield :header %>
         </div>
       <% end %>
       
-      <% if alert %>
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-4">
-          <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <i class="fas fa-exclamation-circle text-red-400"></i>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm text-red-700"><%= alert %></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      <% end %>
-
-      <!-- Main content -->
-      <main>
-        <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-          <%= yield %>
-        </div>
-      </main>
+      <%= yield %>
     </div>
   </body>
 </html>

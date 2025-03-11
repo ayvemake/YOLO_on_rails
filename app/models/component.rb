@@ -1,5 +1,6 @@
 class Component < ApplicationRecord
   has_many :analysis_results
+  has_one_attached :reference_image
   has_many :analyses, through: :analysis_results
   
   validates :name, presence: true, uniqueness: true
@@ -8,5 +9,9 @@ class Component < ApplicationRecord
   def reference_coordinates
     # À implémenter selon votre logique de référence
     { x: 0, y: 0, rotation: 0 }
+  end
+
+  def detection_count
+    analysis_results.count
   end
 end 

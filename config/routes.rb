@@ -41,4 +41,6 @@ Rails.application.routes.draw do
   else
     mount Sidekiq::Web => '/sidekiq'
   end
+
+  get 'documentation', to: 'documentation#index'
 end

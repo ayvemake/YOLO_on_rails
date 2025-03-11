@@ -1,240 +1,105 @@
 <% content_for :header do %>
   <div class="flex justify-between items-center">
-    <h1 class="text-3xl font-bold tracking-tight text-gray-900">Analyse #<%= @analysis.id %></h1>
+    <div class="flex items-center space-x-4">
+      <h1 class="text-3xl font-bold tracking-tight text-gray-900">Analyse #<%= @analysis.id %></h1>
+      <% if @analysis.api_data&.dig("detections").present? %>
+        <% detection_class = @analysis.api_data["detections"].first["class_name"] rescue nil %>
+        <span class="px-3 py-1 text-sm font-semibold rounded-full 
+          <%= detection_class == "PARTICLE" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800" %>">
+          <%= detection_class || "Inconnu" %>
+        </span>
+      <% end %>
+    </div>
     <%= link_to analyses_path, class: "text-blue-600 hover:text-blue-900" do %>
       <i class="fas fa-arrow-left mr-1"></i> Retour aux analyses
     <% end %>
   </div>
 <% end %>
 
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-  <!-- Informations générales -->
-  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6">
-      <h3 class="text-lg leading-6 font-medium text-gray-900">Informations générales</h3>
-      <p class="mt-1 max-w-2xl text-sm text-gray-500">Détails et résultats de l'analyse</p>
-    </div>
-    <div class="border-t border-gray-200">
-      <dl>
-        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Statut</dt>
-          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-            <span id="analysis-status" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= analysis_status_color(@analysis.status) %>">
-              <%= @analysis.status %>
-            </span>
-          </dd>
+<!-- Images côte à côte -->
+<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+  <div class="border-t border-gray-200 p-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Image originale -->
+      <div>
+        <h4 class="text-md font-semibold mb-2 text-center">Image originale</h4>
+        <div class="border border-gray-200 rounded-lg p-2 h-full flex items-center justify-center">
+          <% if @analysis.image.attached? %>
+            <%= image_tag url_for(@analysis.image), class: "max-w-full h-auto rounded-lg shadow-md" %>
+          <% else %>
+            <p class="text-gray-500 italic">Aucune image disponible</p>
+          <% end %>
         </div>
-        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Score de conformité</dt>
-          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-            <% if @analysis.score %>
-              <span id="analysis-score" class="text-lg font-bold <%= @analysis.conforming? ? 'text-green-600' : 'text-red-600' %>">
-                <%= number_to_percentage(@analysis.score * 100, precision: 1) %>
-              </span>
-              <span class="ml-2 text-xs text-gray-500">
-                (<%= @analysis.conforming? ? "Conforme" : "Non conforme" %>)
-              </span>
-            <% else %>
-              <span class="text-gray-400">En attente de résultats</span>
-            <% end %>
-          </dd>
-        </div>
-        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Temps de traitement</dt>
-          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-            <% 
-              # Accéder directement aux données JSON
-              processing_time = nil
-              begin
-                components_data = @analysis[:components]
-                if components_data.is_a?(Hash) || components_data.is_a?(ActiveSupport::HashWithIndifferentAccess)
-                  processing_time = components_data['processing_time'] || components_data[:processing_time]
-                  processing_time = processing_time.to_f if processing_time
-                end
-              rescue
-                processing_time = nil
-              end
-            %>
-            
-            <% if processing_time && processing_time > 0 %>
-              <%= processing_time.round(2) %> secondes
-            <% else %>
-              <span class="text-gray-400">-</span>
-            <% end %>
-          </dd>
-        </div>
-        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Date de création</dt>
-          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-            <%= @analysis.created_at.strftime("%d/%m/%Y à %H:%M:%S") %>
-          </dd>
-        </div>
-        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-gray-500">Composants détectés</dt>
-          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-            <%= @analysis.analysis_results.count %>
-          </dd>
-        </div>
-      </dl>
-    </div>
-  </div>
-
-  <!-- Image analysée -->
-  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6">
-      <h3 class="text-lg leading-6 font-medium text-gray-900">Image analysée</h3>
-      <p class="mt-1 max-w-2xl text-sm text-gray-500">Visualisation des composants détectés</p>
-    </div>
-    <div class="border-t border-gray-200 p-4">
-      <% if @analysis.result_image.try(:attached?) %>
-        <div class="relative">
-          <%= image_tag url_for(@analysis.result_image), class: "w-full h-auto rounded-lg" %>
-        </div>
-      <% else %>
-        <div class="text-center p-4 bg-gray-50 rounded-lg">
-          <p class="text-gray-500">
-            <% if @analysis.completed? %>
-              Aucune image de résultat disponible
-            <% else %>
-              L'image de résultat sera affichée une fois l'analyse terminée
-            <% end %>
-          </p>
-        </div>
-      <% end %>
-    </div>
-  </div>
-</div>
-
-<!-- Résultats détaillés -->
-<div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
-  <div class="px-4 py-5 sm:px-6">
-    <h3 class="text-lg leading-6 font-medium text-gray-900">Résultats de l'analyse</h3>
-    <p class="mt-1 max-w-2xl text-sm text-gray-500">Détails des défauts détectés sur le wafer</p>
-  </div>
-
-  <div class="border-t border-gray-200">
-    <dl>
-      <!-- Statut -->
-      <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-        <dt class="text-sm font-medium text-gray-500">Statut</dt>
-        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= analysis_status_color(@analysis.status) %>">
-            <%= @analysis.status %>
-          </span>
-        </dd>
       </div>
-
-      <!-- Score de confiance -->
-      <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-        <dt class="text-sm font-medium text-gray-500">Score de confiance</dt>
-        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-          <%= number_to_percentage(@analysis.score * 100, precision: 2) if @analysis.score %>
-        </dd>
-      </div>
-
-      <!-- Défauts détectés -->
-      <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-        <dt class="text-sm font-medium text-gray-500">Défauts détectés</dt>
-        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-          <% if @analysis.defects.any? %>
-            <div class="space-y-2">
-              <% @analysis.defects.group_by { |d| d['class_name'] }.each do |defect_type, defects| %>
-                <div class="flex items-center justify-between">
-                  <span class="font-medium"><%= defect_type %></span>
-                  <span class="text-red-600"><%= defects.count %> détection(s)</span>
-                </div>
-              <% end %>
+      
+      <!-- Image résultante -->
+      <div>
+        <h4 class="text-md font-semibold mb-2 text-center">Image analysée</h4>
+        <div class="border border-gray-200 rounded-lg p-2 h-full flex items-center justify-center">
+          <% if @analysis.api_data&.dig("annotated_image").present? %>
+            <div class="relative group">
+              <%= image_tag @analysis.api_data["annotated_image"], 
+                  class: "max-w-full h-auto rounded-lg shadow-md", 
+                  id: "result-image" %>
+              <div class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onclick="toggleFullscreen('result-image')" class="bg-gray-800 bg-opacity-70 text-white p-2 rounded-full">
+                  <i class="fas fa-expand"></i>
+                </button>
+              </div>
             </div>
           <% else %>
-            <span class="text-green-600">Aucun défaut détecté</span>
+            <div class="text-center py-8">
+              <% if @analysis.pending? || @analysis.processing? %>
+                <div class="animate-pulse flex flex-col items-center">
+                  <div class="rounded-full bg-gray-200 h-16 w-16 mb-4"></div>
+                  <p class="text-gray-500">Traitement en cours...</p>
+                </div>
+              <% else %>
+                <p class="text-gray-500 italic">Aucune image disponible</p>
+              <% end %>
+            </div>
           <% end %>
-        </dd>
+        </div>
       </div>
-
-      <!-- Temps de traitement -->
-      <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-        <dt class="text-sm font-medium text-gray-500">Temps de traitement</dt>
-        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-          <%= number_to_human(@analysis.processing_time, precision: 2, units: :seconds) if @analysis.processing_time %>
-        </dd>
-      </div>
-    </dl>
+    </div>
   </div>
+</div>
 
-  <!-- Image avec annotations -->
-  <div class="border-t border-gray-200 p-4">
-    <% if @analysis.result_image.try(:attached?) %>
-      <div class="relative">
-        <%= image_tag url_for(@analysis.result_image), class: "w-full h-auto rounded-lg" %>
-      </div>
-    <% else %>
-      <div class="text-center p-4 bg-gray-50 rounded-lg">
-        <p class="text-gray-500">
-          <% if @analysis.completed? %>
-            Aucune image de résultat disponible
-          <% else %>
-            L'image de résultat sera affichée une fois l'analyse terminée
-          <% end %>
+<!-- Métriques simples -->
+<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+  <div class="px-4 py-5 sm:p-6">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-gray-50 rounded-lg p-4">
+        <h4 class="text-sm font-medium text-gray-500">Confiance</h4>
+        <p class="mt-1 text-2xl font-semibold">
+          <%= number_to_percentage(@analysis.api_data&.dig("score").to_f * 100, precision: 1) %>
         </p>
       </div>
-    <% end %>
-  </div>
-</div>
-
-<%
-=begin %>
-<% if @analysis.verification && @analysis.verification["details"] %>
-  <!-- Détails de vérification -->
-  <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6">
-      <h3 class="text-lg leading-6 font-medium text-gray-900">Détails de vérification</h3>
-      <p class="mt-1 max-w-2xl text-sm text-gray-500">Informations détaillées sur la vérification</p>
-    </div>
-    <div class="border-t border-gray-200 p-4">
-      <pre class="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm"><%= JSON.pretty_generate(@analysis.verification["details"]) %></pre>
-    </div>
-  </div>
-<% end %>
-<%
-=end %>
-
-<div data-controller="analysis" data-analysis-id="<%= @analysis.id %>">
-  <div class="mb-4">
-    <h3 class="text-lg font-semibold">Statut de l'analyse</h3>
-    <p class="text-sm text-gray-600">
-      Statut: <span data-analysis-target="status" class="font-medium <%= @analysis.status == 'completed' ? 'text-green-600' : (@analysis.status == 'failed' ? 'text-red-600' : 'text-blue-600') %>"><%= @analysis.status %></span>
-    </p>
-    
-    <!-- Barre de progression -->
-    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-      <div data-analysis-target="progress" class="h-2.5 rounded-full <%= @analysis.status == 'completed' ? 'bg-green-500' : (@analysis.status == 'failed' ? 'bg-red-500' : 'bg-blue-500') %>" style="width: <%= @analysis.status == 'completed' ? '100%' : '50%' %>"></div>
-    </div>
-  </div>
-  
-  <div data-analysis-target="result" id="analysis-result-container-<%= @analysis.id %>">
-    <% if @analysis.status == 'completed' %>
-      <%= render 'analysis_result', analysis: @analysis %>
-    <% else %>
-      <div class="p-4 bg-blue-50 rounded-lg">
-        <p class="text-blue-700">
-          <i class="fas fa-spinner fa-spin mr-2"></i>
-          Analyse en cours...
+      
+      <div class="bg-gray-50 rounded-lg p-4">
+        <h4 class="text-sm font-medium text-gray-500">Temps de traitement</h4>
+        <p class="mt-1 text-2xl font-semibold">
+          <%= @analysis.api_data&.dig("metrics", "processing", "total") || "-" %>
         </p>
       </div>
-    <% end %>
+
+      <div class="bg-gray-50 rounded-lg p-4">
+        <h4 class="text-sm font-medium text-gray-500">Détections</h4>
+        <p class="mt-1 text-2xl font-semibold">
+          <%= @analysis.api_data&.dig("detections")&.size || 0 %>
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="mt-4">
-  <button data-action="analysis#refreshStatus" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-    <i class="fas fa-sync-alt mr-2"></i> Rafraîchir le statut
-  </button>
-</div>
+<!-- Détections -->
+<%= render partial: "detections" if @analysis.api_data&.dig("detections").present? %>
 
 <%= javascript_tag do %>
   document.addEventListener('DOMContentLoaded', function() {
     // Connexion WebSocket uniquement si l'analyse est en cours
-    <% if @analysis.pending? %>
+    <% if @analysis.pending? || @analysis.processing? %>
       const socket = new WebSocket('<%= @websocket_url %>');
       
       socket.onopen = function(e) {
@@ -258,8 +123,96 @@
           }, 1000);
         }
       };
-      
-      // ... le reste de votre code JavaScript ...
     <% end %>
+    
+    // Ajouter des fonctionnalités d'interaction pour les images
+    setupImageInteractions();
   });
+  
+  function setupImageInteractions() {
+    // Ajouter des événements de survol pour les détections
+    const resultImage = document.getElementById('result-image');
+    if (resultImage) {
+      // Ajouter une classe pour le curseur
+      resultImage.classList.add('cursor-zoom-in');
+      
+      // Ajouter un événement de clic pour agrandir l'image
+      resultImage.addEventListener('click', function() {
+        toggleFullscreen('result-image');
+      });
+    }
+  }
+  
+  function toggleFullscreen(imageId) {
+    const image = document.getElementById(imageId);
+    if (!image) return;
+    
+    // Créer un conteneur modal pour l'image en plein écran
+    const modal = document.createElement('div');
+    modal.classList.add('fixed', 'inset-0', 'z-50', 'flex', 'items-center', 'justify-center', 'bg-black', 'bg-opacity-90');
+    
+    // Créer une version agrandie de l'image
+    const enlargedImg = document.createElement('img');
+    enlargedImg.src = image.src;
+    enlargedImg.classList.add('max-h-screen', 'max-w-screen', 'p-4');
+    
+    // Ajouter un bouton de fermeture
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.classList.add('absolute', 'top-4', 'right-4', 'text-white', 'text-2xl', 'p-2');
+    
+    // Ajouter des informations sur les détections
+    const infoPanel = document.createElement('div');
+    infoPanel.classList.add('absolute', 'bottom-4', 'left-4', 'right-4', 'bg-black', 'bg-opacity-70', 'text-white', 'p-4', 'rounded', 'overflow-auto', 'max-h-60');
+    
+    // Ajouter le contenu des informations
+    <% if @analysis.completed? && @analysis.analysis_results.any? %>
+      let infoPanelContent = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+      
+      // Informations sur le modèle
+      infoPanelContent += '<div><h3 class="text-lg font-bold mb-2">Modèle</h3>';
+      infoPanelContent += '<ul class="text-sm">';
+      infoPanelContent += '<li>Nom: <%= @analysis.api_data["model_name"] || "YOLOv8" %></li>';
+      infoPanelContent += '<li>Précision: <%= number_to_percentage(@analysis.api_data["precision"] * 100, precision: 1) if @analysis.api_data["precision"] %></li>';
+      infoPanelContent += '<li>Rappel: <%= number_to_percentage(@analysis.api_data["recall"] * 100, precision: 1) if @analysis.api_data["recall"] %></li>';
+      infoPanelContent += '</ul></div>';
+      
+      // Détections
+      infoPanelContent += '<div><h3 class="text-lg font-bold mb-2">Détections (<%= @analysis.analysis_results.count %>)</h3>';
+      infoPanelContent += '<ul class="text-sm max-h-32 overflow-y-auto">';
+      <% @analysis.analysis_results.each do |result| %>
+        infoPanelContent += '<li class="mb-1 <%= result.status == "ok" ? "text-green-300" : "text-red-300" %>">';
+        infoPanelContent += '<span class="font-medium"><%= result.component.name %></span> - ';
+        infoPanelContent += 'Pos: (<%= result.position_x.round(1) %>, <%= result.position_y.round(1) %>) - ';
+        infoPanelContent += 'Conf: <%= number_to_percentage(result.conformity_score * 100, precision: 1) %>';
+        infoPanelContent += '</li>';
+      <% end %>
+      infoPanelContent += '</ul></div>';
+      
+      infoPanelContent += '</div>';
+      infoPanel.innerHTML = infoPanelContent;
+    <% end %>
+    
+    // Ajouter les événements
+    modal.addEventListener('click', function() {
+      document.body.removeChild(modal);
+    });
+    
+    closeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.body.removeChild(modal);
+    });
+    
+    enlargedImg.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+    
+    // Assembler le modal
+    modal.appendChild(enlargedImg);
+    modal.appendChild(closeBtn);
+    modal.appendChild(infoPanel);
+    
+    // Ajouter à la page
+    document.body.appendChild(modal);
+  }
 <% end %> 

@@ -51,3 +51,25 @@
 .cursor-mcp {
   cursor: url('path/to/mcp-cursor.png'), auto;
 }
+
+/* Styles pour les images et les interactions */
+.image-container {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.image-container:hover {
+  transform: scale(1.02);
+}
+
+/* Animation pour le chargement */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.pulse-animation {
+  animation: pulse 1.5s infinite ease-in-out;
+}
