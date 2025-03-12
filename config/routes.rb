@@ -12,7 +12,6 @@ Rails.application.routes.draw do
       get :status
     end
   end
-  resources :components
   
   namespace :api do
     namespace :v1 do
@@ -23,10 +22,6 @@ Rails.application.routes.draw do
   # Ajouter ces lignes pour les détections de défauts
   resources :defect_detections, only: [:new, :create, :show]
 
-  # Vos routes existantes
-  resources :analyses
-  resources :components, only: [:index, :show]
-  
   root 'dashboard#index'
   
 

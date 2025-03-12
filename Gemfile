@@ -84,3 +84,5 @@ gem 'ruby-vips', '~> 2.1'
 # Ajouter ces lignes à votre Gemfile
 gem 'sidekiq', '~> 7.1'
 gem 'redis', '~> 5.0'
+
+gem "tailwindcss-ruby", "~> 4.0"

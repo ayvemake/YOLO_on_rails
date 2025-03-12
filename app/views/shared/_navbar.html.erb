@@ -1,45 +1,118 @@
-<nav class="bg-white shadow">
+<nav class="bg-white shadow fixed top-0 left-0 right-0 z-10">
   <!-- ... autres éléments de la navbar ... -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between h-16">
       <div class="flex">
         <div class="flex-shrink-0 flex items-center">
-          <%= link_to root_path, class: "text-blue-600 font-bold text-xl" do %>
-            Pacemaker Vision
-          <% end %>
+          <span class="text-xl font-bold text-indigo-600">Pacemaker Vision</span>
         </div>
         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-          <%= link_to root_path, 
-              class: "inline-flex items-center px-1 pt-1 border-b-2 #{current_page?(root_path) ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}" do %>
-            <i class="fas fa-chart-line mr-1"></i>
-            Tableau de bord
-          <% end %>
-          
-          <%= link_to analyses_path, 
-              class: "inline-flex items-center px-1 pt-1 border-b-2 #{controller_name == 'analyses' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}" do %>
-            <i class="fas fa-microscope mr-1"></i>
-            Analyses
-          <% end %>
-          
-          <%= link_to components_path, 
-              class: "inline-flex items-center px-1 pt-1 border-b-2 #{controller_name == 'components' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}" do %>
-            <i class="fas fa-microchip mr-1"></i>
-            Composants
-          <% end %>
-          
-          <%= link_to documentation_path, 
-              class: "inline-flex items-center px-1 pt-1 border-b-2 #{current_page?(documentation_path) ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}" do %>
-            <i class="fas fa-book mr-1"></i>
-            Documentation
-          <% end %>
+          <%= link_to "Dashboard", root_path, class: "#{current_page?(root_path) ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
+          <%= link_to "Analyses", analyses_path, class: "#{current_page?(analyses_path) ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
         </div>
       </div>
       <div class="hidden sm:ml-6 sm:flex sm:items-center">
-        <%= link_to new_analysis_path, class: "ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" do %>
-          <i class="fas fa-plus mr-2"></i>
-          Nouvelle analyse
-        <% end %>
+        <div class="ml-3 relative">
+          <div>
+            <button type="button" class="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+              <span class="sr-only">Open user menu</span>
+              <i class="fas fa-user-circle text-2xl text-gray-400"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="-mr-2 flex items-center sm:hidden">
+        <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" aria-controls="mobile-menu" aria-expanded="false">
+          <span class="sr-only">Open main menu</span>
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
     </div>
   </div>
-</nav> 
+
+  <!-- Menu mobile avec transition -->
+  <div class="sm:hidden h-0 overflow-hidden transition-all duration-300 ease-in-out" id="mobile-menu">
+    <div class="pt-2 pb-3 space-y-1">
+      <%= link_to "Dashboard", root_path, class: "#{current_page?(root_path) ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium" %>
+      <%= link_to "Analyses", analyses_path, class: "#{current_page?(analyses_path) ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium" %>
+    </div>
+  </div>
+</nav>
+
+<!-- Spacer pour compenser la hauteur de la navbar fixe -->
+<div class="h-16"></div>
+
+<style>
+  /* Styles pour l'animation du menu mobile */
+  #mobile-menu {
+    max-height: 0;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    opacity: 0;
+    overflow: hidden;
+  }
+  
+  #mobile-menu.open {
+    max-height: 200px; /* Hauteur maximale du menu */
+    opacity: 1;
+  }
+</style>
+
+<script>
+  // Fonction pour initialiser le menu mobile
+  function initMobileMenu() {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (mobileMenuButton && mobileMenu) {
+      // Fonction de toggle du menu avec animation
+      function toggleMobileMenu(event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        
+        // Toggle la classe pour l'animation
+        mobileMenu.classList.toggle('open');
+        
+        // Mettre à jour l'attribut aria-expanded
+        const isOpen = mobileMenu.classList.contains('open');
+        mobileMenuButton.setAttribute('aria-expanded', isOpen);
+        console.log('Menu toggled:', isOpen);
+      }
+      
+      // Supprimer les écouteurs d'événements existants
+      const newButton = mobileMenuButton.cloneNode(true);
+      mobileMenuButton.parentNode.replaceChild(newButton, mobileMenuButton);
+      
+      // Ajouter un nouvel écouteur d'événement
+      newButton.addEventListener('click', toggleMobileMenu);
+      
+      // Fermer le menu quand on clique ailleurs
+      document.addEventListener('click', function(event) {
+        if (mobileMenu.classList.contains('open') && 
+            !newButton.contains(event.target) && 
+            !mobileMenu.contains(event.target)) {
+          mobileMenu.classList.remove('open');
+        }
+      });
+      
+      // Fermer le menu quand la fenêtre est redimensionnée
+      window.addEventListener('resize', function() {
+        if (window.innerWidth >= 640 && mobileMenu.classList.contains('open')) {
+          mobileMenu.classList.remove('open');
+        }
+      });
+      
+      // S'assurer que le menu est fermé au démarrage
+      mobileMenu.classList.remove('open');
+    }
+  }
+  
+  // Initialiser le menu au chargement de la page
+  document.addEventListener('DOMContentLoaded', initMobileMenu);
+  
+  // Réinitialiser le menu après chaque navigation Turbo
+  document.addEventListener('turbo:load', initMobileMenu);
+  document.addEventListener('turbo:render', initMobileMenu);
+  document.addEventListener('turbo:frame-render', initMobileMenu);
+</script> 

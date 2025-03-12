@@ -6,14 +6,13 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     
-    <%# Utiliser le CDN de Tailwind en attendant l'installation correcte %>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <%# Ajouter la police Inter depuis Google Fonts %>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-    
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-    <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    
+    <!-- Police Inter depuis Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     
     <style>
@@ -23,7 +22,7 @@
     </style>
   </head>
 
-  <body class="bg-gray-100 min-h-screen">
+  <body class="h-full bg-gray-100">
     <%= render 'shared/navbar' %>
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

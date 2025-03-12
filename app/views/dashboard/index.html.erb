@@ -1,28 +1,33 @@
 <% content_for :header do %>
-  <h1 class="text-3xl font-bold tracking-tight text-gray-900">Tableau de bord</h1>
+  <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Tableau de bord</h1>
 <% end %>
 
-<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+<!-- Cartes de statistiques -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
   <!-- Carte de statistiques: Taux de conformité -->
   <div class="bg-white overflow-hidden shadow rounded-lg">
-    <div class="p-5">
+    <div class="p-4 sm:p-5">
       <div class="flex items-center">
-        <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
-          <i class="fas fa-check-circle text-white text-xl"></i>
+        <div class="flex-shrink-0 bg-blue-500 rounded-md p-2 sm:p-3">
+          <i class="fas fa-check-circle text-white text-lg sm:text-xl"></i>
         </div>
-        <div class="ml-5 w-0 flex-1">
+        <div class="ml-4 sm:ml-5 w-0 flex-1">
           <dl>
             <dt class="text-sm font-medium text-gray-500 truncate">Taux de conformité</dt>
             <dd>
-              <div class="text-lg font-medium text-gray-900"><%= number_to_percentage(@conforming_rate, precision: 1) %></div>
+              <div class="text-base sm:text-lg font-medium text-gray-900">
+                <%= number_to_percentage(@conforming_rate, precision: 1) %>
+              </div>
             </dd>
           </dl>
         </div>
       </div>
     </div>
-    <div class="bg-gray-50 px-5 py-3">
-      <div class="text-sm">
-        <span class="font-medium text-blue-700">Basé sur <%= Analysis.where(status: 'completed').count %> analyses</span>
+    <div class="bg-gray-50 px-4 sm:px-5 py-2 sm:py-3">
+      <div class="text-xs sm:text-sm">
+        <span class="font-medium text-blue-700">
+          Basé sur <%= Analysis.where(status: 'completed').count %> analyses
+        </span>
       </div>
     </div>
   </div>
@@ -55,68 +60,46 @@
       </div>
     </div>
   </div>
-
-  <!-- Carte de statistiques: Composants surveillés -->
-  <div class="bg-white overflow-hidden shadow rounded-lg">
-    <div class="p-5">
-      <div class="flex items-center">
-        <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
-          <i class="fas fa-microchip text-white text-xl"></i>
-        </div>
-        <div class="ml-5 w-0 flex-1">
-          <dl>
-            <dt class="text-sm font-medium text-gray-500 truncate">Composants surveillés</dt>
-            <dd>
-              <div class="text-lg font-medium text-gray-900"><%= @components.count %></div>
-            </dd>
-          </dl>
-        </div>
-      </div>
-    </div>
-    <div class="bg-gray-50 px-5 py-3">
-      <div class="text-sm">
-        <%= link_to components_path, class: "font-medium text-purple-700 hover:text-purple-900" do %>
-          Voir tous les composants <i class="fas fa-arrow-right ml-1"></i>
-        <% end %>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- Analyses récentes -->
-<div class="mt-8">
+<div class="mt-6 sm:mt-8">
   <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+    <div class="px-4 py-4 sm:px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
       <div>
         <h3 class="text-lg leading-6 font-medium text-gray-900">Analyses récentes</h3>
-        <p class="mt-1 max-w-2xl text-sm text-gray-500">Les 10 dernières analyses effectuées</p>
+        <p class="mt-1 text-sm text-gray-500">Les 10 dernières analyses effectuées</p>
       </div>
-      <%= link_to analyses_path, class: "text-sm font-medium text-blue-600 hover:text-blue-500" do %>
+      <%= link_to analyses_path, class: "mt-2 sm:mt-0 text-sm font-medium text-blue-600 hover:text-blue-500" do %>
         Voir toutes les analyses <i class="fas fa-arrow-right ml-1"></i>
       <% end %>
     </div>
+
+    <!-- Table responsive -->
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Score</th>
+            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Date</th>
+            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <% if @recent_analyses.any? %>
             <% @recent_analyses.each do |analysis| %>
               <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#<%= analysis.id %></td>
-                <td class="px-6 py-4 whitespace-nowrap">
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  #<%= analysis.id %>
+                </td>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap">
                   <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= analysis_status_color(analysis.status) %>">
                     <%= analysis.status %>
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
                   <% if analysis.score %>
                     <span class="<%= analysis.conforming? ? 'text-green-600' : 'text-red-600' %>">
                       <%= number_to_percentage(analysis.score * 100, precision: 1) %>
@@ -125,17 +108,20 @@
                     <span class="text-gray-400">-</span>
                   <% end %>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
                   <%= analysis.created_at.strftime("%d/%m/%Y %H:%M") %>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <%= link_to "Voir", analysis_path(analysis), class: "text-blue-600 hover:text-blue-900" %>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <%= link_to analysis_path(analysis), class: "text-blue-600 hover:text-blue-900" do %>
+                    <i class="fas fa-eye"></i>
+                    <span class="hidden sm:inline ml-1">Voir</span>
+                  <% end %>
                 </td>
               </tr>
             <% end %>
           <% else %>
             <tr>
-              <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+              <td colspan="5" class="px-3 sm:px-6 py-4 text-center text-sm text-gray-500">
                 Aucune analyse récente
               </td>
             </tr>

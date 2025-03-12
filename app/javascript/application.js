@@ -1,3 +1,10 @@
-// Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
+// Entry point for the build script
 import "@hotwired/turbo-rails"
-import "controllers"
+import "@hotwired/stimulus"
+import "./controllers"
+
+// Initialize Stimulus application
+const application = Application.start()
+
+// Register controllers
+application.register("navbar", NavbarController)
