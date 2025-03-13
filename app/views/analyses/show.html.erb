@@ -16,6 +16,38 @@
   </div>
 <% end %>
 
+<div class="analysis-results">
+  <% if @analysis.status == 'completed' %>
+    <h2>Résultats de l'analyse</h2>
+    <p>Score global : <%= @analysis.score.round(2) %>%</p>
+    
+    <% if @analysis.api_data && @analysis.api_data['detections'].present? %>
+      <h3>Détections (<%= @analysis.api_data['detections'].size %>)</h3>
+      <div class="detections-grid">
+        <% @analysis.api_data['detections'].each do |detection| %>
+          <div class="detection-card <%= detection['is_defective'] ? 'defective' : 'ok' %>">
+            <h4><%= detection['class_name'] %></h4>
+            <p>Confiance : <%= (detection['confidence'] * 100).round(2) %>%</p>
+            <p>Statut : <%= detection['is_defective'] ? 'Défectueux' : 'OK' %></p>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p>Aucune détection trouvée.</p>
+    <% end %>
+  <% elsif @analysis.status == 'failed' %>
+    <div class="error-message">
+      <h2>Erreur lors de l'analyse</h2>
+      <p><%= @analysis.error_message %></p>
+    </div>
+  <% else %>
+    <div class="loading">
+      <h2>Analyse en cours...</h2>
+      <p>Veuillez patienter pendant que nous analysons votre image.</p>
+    </div>
+  <% end %>
+</div>
+
 <!-- Images côte à côte -->
 <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
   <div class="border-t border-gray-200 p-4">
@@ -36,17 +68,8 @@
       <div>
         <h4 class="text-md font-semibold mb-2 text-center">Image analysée</h4>
         <div class="border border-gray-200 rounded-lg p-2 h-full flex items-center justify-center">
-          <% if @analysis.api_data&.dig("annotated_image").present? %>
-            <div class="relative group">
-              <%= image_tag @analysis.api_data["annotated_image"], 
-                  class: "max-w-full h-auto rounded-lg shadow-md", 
-                  id: "result-image" %>
-              <div class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onclick="toggleFullscreen('result-image')" class="bg-gray-800 bg-opacity-70 text-white p-2 rounded-full">
-                  <i class="fas fa-expand"></i>
-                </button>
-              </div>
-            </div>
+          <% if @analysis.result_image.attached? %>
+            <%= image_tag url_for(@analysis.result_image), class: "w-full h-auto rounded-lg shadow-md" %>
           <% else %>
             <div class="text-center py-8">
               <% if @analysis.pending? || @analysis.processing? %>
@@ -182,9 +205,10 @@
       infoPanelContent += '<ul class="text-sm max-h-32 overflow-y-auto">';
       <% @analysis.analysis_results.each do |result| %>
         infoPanelContent += '<li class="mb-1 <%= result.status == "ok" ? "text-green-300" : "text-red-300" %>">';
-        infoPanelContent += '<span class="font-medium"><%= result.component.name %></span> - ';
+        infoPanelContent += '<span class="font-medium"><%= result.status == "ok" ? "Conforme" : "Défaut détecté" %></span> - ';
+        infoPanelContent += 'Type: <%= result.defect_type || "Inconnu" %> - ';
         infoPanelContent += 'Pos: (<%= result.position_x.round(1) %>, <%= result.position_y.round(1) %>) - ';
-        infoPanelContent += 'Conf: <%= number_to_percentage(result.conformity_score * 100, precision: 1) %>';
+        infoPanelContent += 'Conf: <%= number_to_percentage(result.conformity_score, precision: 1) %>';
         infoPanelContent += '</li>';
       <% end %>
       infoPanelContent += '</ul></div>';

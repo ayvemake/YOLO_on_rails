@@ -1,154 +1,133 @@
 class AnalysisJob < ApplicationJob
   queue_as :default
+  require 'open-uri'
 
-  # Configuration pour MCP (à définir dans config/initializers/mcp_server_config.rb)
-  # MCP_ENABLED = true
-  # MCP_SERVER_URL = 'http://mcp-server:5000'
-  # MCP_API_KEY = 'votre_clé_api_ici'
-  # MCP_DEFAULT_MODEL = 'gpt-4'
-
-  def perform(analysis)
-    # Update status to processing
-    analysis.update(status: :processing)
-
-    begin
-      # Get image URL
-      image_url = Rails.application.routes.url_helpers.rails_blob_url(analysis.image)
-
-      # Call FastAPI
-      response = AiService.analyze_image(analysis)
-  
-      case response.code.to_i
-      when 200
-        process_successful_response(analysis, response)
-      when 422
-        # Handle validation errors
-        handle_api_error(analysis, response)
-        analysis.update(status: :failed)
-      else
-        # Handle other errors
-        Rails.logger.error "API Error: #{response.code} - #{response.body}"
-        analysis.update(status: :failed)
-      end
-
-    rescue StandardError => e
-      Rails.logger.error "Analysis failed: #{e.message}"
-      analysis.update(status: :failed)
-      # Store error in api_data instead of error_message
-      analysis.update(api_data: { error: e.message })
-    end
-  end
-
-  private
-
-  def process_successful_response(analysis, response)
-    begin
-      data = JSON.parse(response.body)
-      
-      # Calculate score based on detections
-      score = calculate_score(data)
-      
-      # Update analysis with results
-      analysis.update(
-        status: :completed,
-        score: score,
-        api_data: data
-      )
-      
-      # Create individual analysis results
-      create_analysis_results(analysis, data)
-      
-      # If there's a result image URL in the response, download it
-      if data['result_image_url']
-        download_result_image(analysis, data['result_image_url'])
-      end
-      
-    rescue JSON::ParserError => e
-      Rails.logger.error "Failed to parse API response: #{e.message}"
-      analysis.update(status: :failed)
-      analysis.update(api_data: { error: "Failed to parse API response" })
-    rescue StandardError => e
-      Rails.logger.error "Error processing successful response: #{e.message}"
-      analysis.update(status: :failed)
-      analysis.update(api_data: { error: e.message })
-    end
-  end
-
-  def handle_api_error(analysis, response)
-    error_message = begin
-      data = JSON.parse(response.body)
-      if data['detail'].is_a?(Array)
-        data['detail'].map { |e| e['msg'] }.join(', ')
-      else
-        data['detail']
-      end
-    rescue
-      "API Error: #{response.code}"
-    end
+  def perform(analysis_id)
+    # Si analysis_id est un objet Analysis, récupérer son ID
+    analysis_id = analysis_id.id if analysis_id.is_a?(Analysis)
     
-    # Store error in api_data instead of using error_message
-    analysis.update(api_data: { error: error_message })
-  end
-
-  def calculate_score(data)
-    # Calculer le score en fonction des résultats
-    return data['score'] if data['score']
+    analysis = Analysis.find(analysis_id)
     
-    detections = data['detections'] || []
-    total = detections.size
-    defects = detections.count { |d| d['is_defective'] }
+    # Vérifier si l'analyse a une image attachée
+    return unless analysis.image.attached?
     
-    total.zero? ? 0 : ((total - defects).to_f / total * 100).round(2)
-  end
-
-  def create_analysis_results(analysis, data)
-    (data['detections'] || []).each do |detection|
-      # Find or create the component based on the class_name
-      component = Component.find_or_create_by(name: detection['class_name'])
-      
-      # Create the analysis result with the correct attributes
-      analysis.analysis_results.create!(
-        component: component,
-        position_x: detection['bbox'][0],
-        position_y: detection['bbox'][1],
-        rotation: 0.0, # Default value since YOLO doesn't provide rotation
-        conformity_score: detection['confidence'],
-        status: detection['is_defective'] ? :not_ok : :ok,
-        raw_data: detection
-      )
-    end
-  end
-
-  def download_result_image(analysis, image_url)
+    # Obtenir l'URL temporaire de l'image
+    image_url = Rails.application.routes.url_helpers.rails_blob_path(analysis.image, only_path: true)
+    image_path = ActiveStorage::Blob.service.path_for(analysis.image.key)
+    
+    # Ajoutez ces lignes de débogage au début de la méthode perform
+    Rails.logger.info("Démarrage de l'analyse pour l'ID: #{analysis_id}")
+    Rails.logger.info("Image attachée: #{analysis.image.attached?}")
+    Rails.logger.info("Chemin de l'image: #{image_path}")
+    
     begin
-      # Download the image from the URL
-      uri = URI.parse(image_url)
-      response = Net::HTTP.get_response(uri)
+      # Appeler l'API Python
+      response = ApiClient.post_image(image_path)
       
-      if response.is_a?(Net::HTTPSuccess)
-        # Attach the downloaded image to the analysis
-        temp_file = Tempfile.new(['result', '.jpg'])
-        temp_file.binmode
-        temp_file.write(response.body)
-        temp_file.rewind
+      # Et après l'appel à l'API
+      Rails.logger.info("Réponse complète de l'API: #{response.inspect}")
+      
+      if response['success']
+        # Extraire les détections et les informations pertinentes
+        detections = response['result']['detections'] || []
+        processing_time = response['result']['processing_time']
         
-        # Attach the result image to the analysis
-        analysis.result_image.attach(
-          io: temp_file,
-          filename: "result_#{analysis.id}.jpg",
-          content_type: 'image/jpeg'
+        # Calculer un score basé sur les détections
+        defects_count = detections.count { |d| d['is_defective'] }
+        total_count = detections.size
+        score = total_count > 0 ? (1.0 - (defects_count.to_f / total_count)) * 100 : 100.0
+        
+        # Mettre à jour l'analyse avec les résultats
+        analysis.update(
+          status: 'completed',
+          score: score,
+          api_data: response['result'],
+          error_message: nil,
+          processed_at: Time.current
         )
         
-        # Log success
-        Rails.logger.info "Successfully downloaded and attached result image for analysis ##{analysis.id}"
+        # Créer des résultats d'analyse pour chaque détection
+        detections.each do |detection|
+          bbox = detection['bbox']
+          
+          # Calculer la position et la rotation (si disponible)
+          position_x = (bbox[0] + bbox[2]) / 2.0 if bbox
+          position_y = (bbox[1] + bbox[3]) / 2.0 if bbox
+          
+          # Créer un résultat d'analyse sans référence au component
+          analysis.analysis_results.create(
+            position_x: position_x,
+            position_y: position_y,
+            conformity_score: detection['confidence'] * 100,
+            status: detection['is_defective'] ? 'not_ok' : 'ok',
+            defect_type: detection['class_name']
+          )
+        end
         
-        temp_file.close
-        temp_file.unlink
+        # Traiter l'image de résultat si disponible
+        if response['result']['image_url'].present?
+          begin
+            # Construire l'URL complète
+            image_url = "#{ApiClient::API_URL}#{response['result']['image_url']}"
+            Rails.logger.info("Téléchargement de l'image depuis: #{image_url}")
+            
+            # Télécharger l'image
+            downloaded_image = URI.open(image_url)
+            
+            # Attacher l'image de résultat
+            analysis.result_image.attach(
+              io: downloaded_image,
+              filename: "result_#{analysis.id}.png",
+              content_type: 'image/png'
+            )
+          rescue => e
+            Rails.logger.error("Error downloading result image: #{e.message}")
+          end
+        end
+        
+        # Diffuser les résultats via ActionCable
+        ActionCable.server.broadcast(
+          "analysis_#{analysis.id}",
+          {
+            status: 'completed',
+            score: score,
+            detections: detections,
+            processing_time: processing_time
+          }
+        )
       else
-        Rails.logger.error "Failed to download result image: #{response.code} #{response.message}"
+        # Utiliser le champ error_message existant
+        analysis.update(
+          status: 'failed',
+          error_message: response['error'] || 'Unknown error',
+          processed_at: Time.current
+        )
+        
+        ActionCable.server.broadcast(
+          "analysis_#{analysis.id}",
+          {
+            status: 'failed',
+            error: response['error'] || 'Unknown error'
+          }
+        )
       end
-    rescue StandardError => e
-      Rails.logger.error "Error downloading result image: #{e.message}"
+    rescue => e
+      Rails.logger.error("Error in AnalysisJob: #{e.message}")
+      
+      # Utiliser le champ error_message existant
+      analysis.update(
+        status: 'failed',
+        error_message: e.message,
+        processed_at: Time.current
+      )
+      
+      ActionCable.server.broadcast(
+        "analysis_#{analysis.id}",
+        {
+          status: 'failed',
+          error: e.message
+        }
+      )
     end
   end
-end 
+end

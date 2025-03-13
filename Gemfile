@@ -86,3 +86,7 @@ gem 'sidekiq', '~> 7.1'
 gem 'redis', '~> 5.0'
 
 gem "tailwindcss-ruby", "~> 4.0"
+
+gem "rest-client", "~> 2.1"
+
+gem 'httparty'

@@ -1,9 +1,9 @@
 class AnalysisResult < ApplicationRecord
   belongs_to :analysis
-  belongs_to :component
+  belongs_to :component, optional: true
   
   # Statuts possibles pour un résultat d'analyse de composant
-  enum status: { ok: 'ok', not_ok: 'not_ok', unknown: 'unknown' }
+  enum status: { ok: 0, not_ok: 1 }, _prefix: true
   
   validates :position_x, :position_y, :conformity_score, presence: true
   

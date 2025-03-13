@@ -1,8 +1,9 @@
 class Analysis < ApplicationRecord
   belongs_to :component, optional: true
+  has_many :analysis_results, dependent: :destroy
   has_one_attached :image
   has_one_attached :result_image
-  has_many :analysis_results, dependent: :destroy
+
   
   # Définir les statuts possibles
   enum status: {

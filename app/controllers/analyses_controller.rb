@@ -16,18 +16,11 @@ class AnalysesController < ApplicationController
   
   def create
     @analysis = Analysis.new(analysis_params)
-    @analysis.status = :pending
     
     if @analysis.save
-      begin
-        # Envoyer l'image à l'API FastAPI en arrière-plan
-        AnalysisJob.perform_later(@analysis)
-        redirect_to @analysis, notice: 'Analyse démarrée. Les résultats se mettront à jour en temps réel.'
-      rescue => e
-        Rails.logger.error("Erreur lors du lancement de l'analyse: #{e.message}")
-        @analysis.update(status: :failed)
-        redirect_to @analysis, alert: "Erreur lors du lancement de l'analyse. Veuillez réessayer."
-      end
+      # Enqueue le job avec l'ID de l'analyse, pas l'objet lui-même
+      AnalysisJob.perform_later(@analysis.id)
+      redirect_to @analysis, notice: 'Analysis was successfully created.'
     else
       render :new
     end

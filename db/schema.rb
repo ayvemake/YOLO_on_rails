@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_03_10_152927) do
+ActiveRecord::Schema[7.1].define(version: 2025_03_13_010001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -50,11 +50,13 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_10_152927) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "api_data"
+    t.text "error_message"
+    t.datetime "processed_at"
   end
 
   create_table "analysis_results", force: :cascade do |t|
     t.bigint "analysis_id", null: false
-    t.bigint "component_id", null: false
+    t.bigint "component_id"
     t.float "position_x"
     t.float "position_y"
     t.float "rotation"
@@ -63,6 +65,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_10_152927) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "raw_data"
+    t.string "defect_type"
     t.index ["analysis_id"], name: "index_analysis_results_on_analysis_id"
     t.index ["component_id"], name: "index_analysis_results_on_component_id"
   end
