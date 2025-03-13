@@ -49,7 +49,10 @@ class Analysis < ApplicationRecord
 
   def processing_time
     return nil unless api_data&.dig('result', 'processing_time')
-    "#{api_data['result']['processing_time']}s"
+    
+    # Convertir en ms et limiter à 2 décimales
+    time_in_ms = api_data['result']['processing_time'].to_f
+    "#{format('%.2f', time_in_ms)}ms"
   end
 
   def detection_count
@@ -116,15 +119,17 @@ class Analysis < ApplicationRecord
   def processing_time_in_seconds
     return nil unless api_data&.dig('metrics', 'processing', 'total')
 
-    # Enlever le 's' et convertir en float
+    # Enlever le 's' et convertir en float, limiter à 2 décimales
     time_str = api_data['metrics']['processing']['total'].to_s
-    time_str.delete('s').to_f
+    format('%.2f', time_str.delete('s').to_f)
   end
 
   def processing_time_formatted
     return nil unless processing_time_in_seconds
-
-    "#{processing_time_in_seconds}s"
+    
+    # Convertir en ms et limiter à 2 décimales
+    time_in_ms = processing_time_in_seconds.to_f * 1000
+    "#{format('%.2f', time_in_ms)}ms"
   end
 
   def defect_types
