@@ -132,11 +132,16 @@ class Analysis < ApplicationRecord
   end
 
   def score
-    return nil unless completed? && analysis_results.any?
+    return nil unless completed? && api_data.present?
     
-    # Le score représente la confiance moyenne du modèle YOLOv8 dans ses détections
-    # Une valeur plus élevée indique que le modèle est plus confiant dans ses prédictions
-    analysis_results.average(:confidence)
+    # Récupérer directement la confidence depuis les données de l'API
+    confidence = api_data&.dig('result', 'confidence')
+    return confidence if confidence.present?
+
+    # Fallback sur la moyenne des confidences des résultats si disponible
+    return analysis_results.average(:confidence) if analysis_results.any?
+    
+    nil
   end
 
   def confidence_score
@@ -168,5 +173,11 @@ class Analysis < ApplicationRecord
     return 0 if today_analyzed.zero?
     
     (today.with_defects.count.to_f / today_analyzed * 100).round(1)
+  end
+
+  def after_api_update
+    if api_data.present? && api_data['result'].present?
+      update_column(:score, api_data['result']['confidence'])
+    end
   end
 end

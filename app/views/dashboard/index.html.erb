@@ -29,9 +29,8 @@
         <div>
           <h3 class="font-medium text-gray-900">Score Interpretation</h3>
           <ul class="list-disc pl-5 space-y-1">
-            <li><strong>≥ 50%</strong>: <span class="text-green-600">Compliant</span> - The component meets quality criteria</li>
-            <li><strong>< 50%</strong>: <span class="text-red-600">Non-compliant</span> - Significant defects have been detected</li>
-            <li>The score is calculated based on the severity and number of defects detected by our YOLOv8 model</li>
+            <li><strong>≥ 50%</strong>: <span class="text-green-600">Compliant</span> - The model is confident about the analysis</li>
+            <li><strong>< 50%</strong>: <span class="text-red-600">Non-compliant</span> - The model lacks of confidence about the analysis</li>
             <li>Defects are classified into 7 categories (PARTICLE, SCRATCH, etc.)</li>
           </ul>
         </div>
@@ -46,19 +45,19 @@
 
 <!-- Cartes de statistiques -->
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-  <!-- Carte de statistiques: Taux de conformité -->
+  <!-- Carte de statistiques: Taux de succès -->
   <div class="bg-white overflow-hidden shadow rounded-lg">
     <div class="p-4 sm:p-5">
       <div class="flex items-center">
-        <div class="flex-shrink-0 bg-blue-500 rounded-md p-2 sm:p-3">
-          <i class="fas fa-check-circle text-white text-lg sm:text-xl"></i>
+        <div class="flex-shrink-0 bg-green-500 rounded-md p-2 sm:p-3">
+          <i class="fas fa-chart-line text-white text-lg sm:text-xl"></i>
         </div>
         <div class="ml-4 sm:ml-5 w-0 flex-1">
           <dl>
-            <dt class="text-sm font-medium text-gray-500 truncate">Compliance Rate</dt>
+            <dt class="text-sm font-medium text-gray-500 truncate">Success Rate</dt>
             <dd>
               <div class="text-base sm:text-lg font-medium text-gray-900">
-                <%= number_to_percentage(@conforming_rate, precision: 1) %>
+                <%= number_to_percentage(@success_rate, precision: 1) %>
               </div>
             </dd>
           </dl>
@@ -67,8 +66,11 @@
     </div>
     <div class="bg-gray-50 px-4 sm:px-5 py-2 sm:py-3">
       <div class="text-xs sm:text-sm">
-        <span class="font-medium text-blue-700">
+        <span class="font-medium text-green-700">
           Based on <%= Analysis.completed.count %> analyses
+        </span>
+        <span class="block text-gray-500">
+          Detections with confidence ≥ 50%
         </span>
       </div>
     </div>
@@ -272,14 +274,6 @@
     <p class="text-xs text-gray-500 mt-1">
       Model's average confidence level in its detections
     </p>
-  </div>
-
-  <!-- Taux de conformité -->
-  <div class="bg-white overflow-hidden shadow rounded-lg p-5">
-    <h3 class="text-sm font-medium text-gray-500">Taux de conformité aujourd'hui</h3>
-    <div class="mt-2 text-2xl font-semibold">
-      <%= number_to_percentage(Analysis.today_conformity_rate, precision: 1) %>
-    </div>
   </div>
 
   <!-- Taux de défauts -->
