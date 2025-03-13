@@ -4,4 +4,4 @@ class DocumentationController < ApplicationController
     @total_analyses = Analysis.count
     @successful_analyses = Analysis.successful.count
   end
-end 
+end

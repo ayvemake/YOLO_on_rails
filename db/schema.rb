@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_03_13_010001) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_13_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -20,6 +20,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_13_010001) do
     t.bigint "record_id", null: false
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
   end
@@ -33,6 +34,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_13_010001) do
     t.bigint "byte_size", null: false
     t.string "checksum"
     t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
@@ -43,49 +45,38 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_13_010001) do
   end
 
   create_table "analyses", force: :cascade do |t|
-    t.string "status"
-    t.float "score"
-    t.datetime "timestamp"
-    t.jsonb "components"
+    t.jsonb "api_data"
+    t.string "error_message"
+    t.datetime "processed_at"
+    t.integer "status", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.jsonb "api_data"
-    t.text "error_message"
-    t.datetime "processed_at"
   end
 
   create_table "analysis_results", force: :cascade do |t|
     t.bigint "analysis_id", null: false
-    t.bigint "component_id"
+    t.string "defect_class"
+    t.float "confidence"
     t.float "position_x"
     t.float "position_y"
-    t.float "rotation"
     t.float "conformity_score"
-    t.string "status"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.float "rotation"
+    t.integer "status", default: 0
     t.jsonb "raw_data"
-    t.string "defect_type"
-    t.index ["analysis_id"], name: "index_analysis_results_on_analysis_id"
-    t.index ["component_id"], name: "index_analysis_results_on_component_id"
-  end
-
-  create_table "components", force: :cascade do |t|
-    t.string "name"
-    t.text "description"
-    t.string "reference_image"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["analysis_id"], name: "index_analysis_results_on_analysis_id"
   end
 
   create_table "defect_detections", force: :cascade do |t|
-    t.json "result"
+    t.bigint "analysis_result_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["analysis_result_id"], name: "index_defect_detections_on_analysis_result_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "analysis_results", "analyses"
-  add_foreign_key "analysis_results", "components"
+  add_foreign_key "defect_detections", "analysis_results"
 end

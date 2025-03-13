@@ -7,18 +7,18 @@ class AiService
     def analyze_image(analysis)
       # Get base API URL from config and strip whitespace
       api_url = ENV.fetch('AI_API_URL', 'http://localhost:8080').strip
-      
+
       # Build complete URL
       uri = URI.parse("#{api_url}/analyze")
-      
+
       # Get the image file path
       image_path = ActiveStorage::Blob.service.path_for(analysis.image.key)
-      
+
       # Create multipart form data with just the raw file
       form_data = [
         ['file', File.open(image_path), { filename: analysis.image.filename.to_s }]
       ]
-      
+
       # Send request using Net::HTTP::Post.new
       response = nil
       Net::HTTP.start(uri.host, uri.port) do |http|
@@ -26,10 +26,10 @@ class AiService
         request.set_form(form_data, 'multipart/form-data')
         response = http.request(request)
       end
-      
+
       Rails.logger.info "API Response Code: #{response.code}"
       Rails.logger.info "API Response Body: #{response.body}"
-      
+
       response
     end
 
@@ -56,4 +56,4 @@ class AiService
       raise
     end
   end
-end 
+end

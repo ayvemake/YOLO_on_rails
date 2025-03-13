@@ -10,4 +10,4 @@ module DocumentationHelper
       'SEZ BURNT' => 'Zones brûlées lors du processus SEZ.'
     }[defect_class]
   end
-end 
+end

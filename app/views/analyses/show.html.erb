@@ -16,108 +16,105 @@
   </div>
 <% end %>
 
-<div class="analysis-results">
-  <% if @analysis.status == 'completed' %>
-    <h2>Résultats de l'analyse</h2>
-    <p>Score global : <%= @analysis.score.round(2) %>%</p>
-    
-    <% if @analysis.api_data && @analysis.api_data['detections'].present? %>
-      <h3>Détections (<%= @analysis.api_data['detections'].size %>)</h3>
-      <div class="detections-grid">
-        <% @analysis.api_data['detections'].each do |detection| %>
-          <div class="detection-card <%= detection['is_defective'] ? 'defective' : 'ok' %>">
-            <h4><%= detection['class_name'] %></h4>
-            <p>Confiance : <%= (detection['confidence'] * 100).round(2) %>%</p>
-            <p>Statut : <%= detection['is_defective'] ? 'Défectueux' : 'OK' %></p>
+<div class="container mx-auto px-4 py-8">
+  <div class="mb-4">
+    <%= link_to analyses_path, class: "text-blue-600 hover:text-blue-800" do %>
+      <i class="fas fa-arrow-left"></i> Retour aux analyses
+    <% end %>
+  </div>
+
+  <h1 class="text-2xl font-bold mb-6">Analyse #<%= @analysis.id %></h1>
+
+  <% if @analysis.failed? %>
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+      <strong>Erreur lors de l'analyse</strong>
+      <p><%= @analysis.error_message %></p>
+    </div>
+  <% end %>
+
+  <!-- Images côte à côte -->
+  <div class="flex flex-row gap-4 mb-6">
+    <div class="flex-1">
+      <h2 class="text-lg font-semibold mb-2">Image originale</h2>
+      <% if @analysis.image.attached? %>
+        <%= image_tag @analysis.image, class: "w-full h-auto object-contain" %>
+      <% end %>
+    </div>
+
+    <div class="flex-1">
+      <h2 class="text-lg font-semibold mb-2">Image analysée</h2>
+      <% if @analysis.result_image.attached? %>
+        <%= image_tag @analysis.result_image, class: "w-full h-auto object-contain" %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Métriques en 2x2 -->
+  <div class="grid grid-cols-2 gap-4 mb-6">
+    <!-- Confiance -->
+    <div class="bg-white rounded-lg p-4 shadow">
+      <h2 class="text-sm font-medium text-gray-500 mb-1">Confiance</h2>
+      <% if @analysis.confidence_score %>
+        <div class="text-2xl font-bold">
+          <%= number_to_percentage(@analysis.confidence_score * 100, precision: 1) %>
+        </div>
+      <% else %>
+        <div class="text-2xl font-bold text-gray-400">-</div>
+      <% end %>
+    </div>
+
+    <!-- Temps de traitement -->
+    <div class="bg-white rounded-lg p-4 shadow">
+      <h2 class="text-sm font-medium text-gray-500 mb-1">Temps de traitement</h2>
+      <div class="text-2xl font-bold">
+        <%= @analysis.processing_time || '-' %>
+      </div>
+    </div>
+
+    <!-- Détections -->
+    <div class="bg-white rounded-lg p-4 shadow">
+      <h2 class="text-sm font-medium text-gray-500 mb-1">Détections</h2>
+      <div class="text-2xl font-bold">
+        <%= @analysis.defect_count %>
+      </div>
+    </div>
+
+    <!-- Types de défauts -->
+    <div class="bg-white rounded-lg p-4 shadow">
+      <h2 class="text-sm font-medium text-gray-500 mb-1">Types de défauts</h2>
+      <% if @analysis.has_defects? %>
+        <div class="text-2xl font-bold">
+          <%= @analysis.defect_types.join(', ') %>
+        </div>
+      <% else %>
+        <div class="text-2xl font-bold text-gray-500">Aucun défaut</div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Détails des détections -->
+  <% if @analysis.completed? && @analysis.analysis_results.any? %>
+    <div class="mt-6 bg-white rounded-lg p-4 shadow">
+      <h2 class="text-lg font-semibold mb-4">Détails des détections</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% @analysis.analysis_results.each do |result| %>
+          <div class="border rounded p-3">
+            <p class="font-medium"><%= result.defect_class %></p>
+            <p>Confiance: <%= number_to_percentage(result.confidence * 100, precision: 1) %></p>
+            <p>Position: (<%= number_with_precision(result.position_x, precision: 1) %>, 
+                        <%= number_with_precision(result.position_y, precision: 1) %>)</p>
+            <p>Statut: <%= result.status.humanize %></p>
           </div>
         <% end %>
       </div>
-    <% else %>
-      <p>Aucune détection trouvée.</p>
-    <% end %>
-  <% elsif @analysis.status == 'failed' %>
-    <div class="error-message">
-      <h2>Erreur lors de l'analyse</h2>
-      <p><%= @analysis.error_message %></p>
-    </div>
-  <% else %>
-    <div class="loading">
-      <h2>Analyse en cours...</h2>
-      <p>Veuillez patienter pendant que nous analysons votre image.</p>
     </div>
   <% end %>
 </div>
 
-<!-- Images côte à côte -->
-<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
-  <div class="border-t border-gray-200 p-4">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Image originale -->
-      <div>
-        <h4 class="text-md font-semibold mb-2 text-center">Image originale</h4>
-        <div class="border border-gray-200 rounded-lg p-2 h-full flex items-center justify-center">
-          <% if @analysis.image.attached? %>
-            <%= image_tag url_for(@analysis.image), class: "max-w-full h-auto rounded-lg shadow-md" %>
-          <% else %>
-            <p class="text-gray-500 italic">Aucune image disponible</p>
-          <% end %>
-        </div>
-      </div>
-      
-      <!-- Image résultante -->
-      <div>
-        <h4 class="text-md font-semibold mb-2 text-center">Image analysée</h4>
-        <div class="border border-gray-200 rounded-lg p-2 h-full flex items-center justify-center">
-          <% if @analysis.result_image.attached? %>
-            <%= image_tag url_for(@analysis.result_image), class: "w-full h-auto rounded-lg shadow-md" %>
-          <% else %>
-            <div class="text-center py-8">
-              <% if @analysis.pending? || @analysis.processing? %>
-                <div class="animate-pulse flex flex-col items-center">
-                  <div class="rounded-full bg-gray-200 h-16 w-16 mb-4"></div>
-                  <p class="text-gray-500">Traitement en cours...</p>
-                </div>
-              <% else %>
-                <p class="text-gray-500 italic">Aucune image disponible</p>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Métriques simples -->
-<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
-  <div class="px-4 py-5 sm:p-6">
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="bg-gray-50 rounded-lg p-4">
-        <h4 class="text-sm font-medium text-gray-500">Confiance</h4>
-        <p class="mt-1 text-2xl font-semibold">
-          <%= number_to_percentage(@analysis.api_data&.dig("score").to_f * 100, precision: 1) %>
-        </p>
-      </div>
-      
-      <div class="bg-gray-50 rounded-lg p-4">
-        <h4 class="text-sm font-medium text-gray-500">Temps de traitement</h4>
-        <p class="mt-1 text-2xl font-semibold">
-          <%= @analysis.api_data&.dig("metrics", "processing", "total") || "-" %>
-        </p>
-      </div>
-
-      <div class="bg-gray-50 rounded-lg p-4">
-        <h4 class="text-sm font-medium text-gray-500">Détections</h4>
-        <p class="mt-1 text-2xl font-semibold">
-          <%= @analysis.api_data&.dig("detections")&.size || 0 %>
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- Détections -->
 <%= render partial: "detections" if @analysis.api_data&.dig("detections").present? %>
+
 
 <%= javascript_tag do %>
   document.addEventListener('DOMContentLoaded', function() {

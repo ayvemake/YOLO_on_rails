@@ -1,6 +1,48 @@
 <% content_for :header do %>
-  <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Tableau de bord</h1>
+  <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
 <% end %>
+
+<!-- Section d'explication -->
+<div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+  <div class="px-4 py-5 sm:p-6">
+    <h2 class="text-lg font-medium text-gray-900 mb-3">Analysis Interpretation Guide</h2>
+    
+    <div class="prose max-w-none text-sm">
+      <p class="mb-3">
+        Our analysis system uses artificial intelligence to detect defects on wafers.
+        Here's how to interpret the results:
+      </p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <h3 class="font-medium text-gray-900">Analysis Table Columns</h3>
+          <ul class="list-disc pl-5 space-y-1">
+            <li><strong>ID</strong>: Unique identifier for the analysis</li>
+            <li><strong>Status</strong>: Current state of the analysis (completed, processing, failed)</li>
+            <li><strong>Score</strong>: Conformity percentage (≥50% in green = the model considers the analysis compliant)</li>
+            <li><strong>Detections</strong>: Number of elements detected in the image</li>
+            <li><strong>Defect Type</strong>: Categories of defects detected (PARTICLE, SCRATCH, etc.)</li>
+            <li><strong>Date</strong>: Date and time of the analysis</li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="font-medium text-gray-900">Score Interpretation</h3>
+          <ul class="list-disc pl-5 space-y-1">
+            <li><strong>≥ 50%</strong>: <span class="text-green-600">Compliant</span> - The component meets quality criteria</li>
+            <li><strong>< 50%</strong>: <span class="text-red-600">Non-compliant</span> - Significant defects have been detected</li>
+            <li>The score is calculated based on the severity and number of defects detected by our YOLOv8 model</li>
+            <li>Defects are classified into 7 categories (PARTICLE, SCRATCH, etc.)</li>
+          </ul>
+        </div>
+      </div>
+      
+      <p class="text-xs text-gray-500">
+        For more details on how the AI model works and result interpretation, see the <a href="/documentation" class="text-blue-600 hover:text-blue-800">documentation</a>.
+      </p>
+    </div>
+  </div>
+</div>
 
 <!-- Cartes de statistiques -->
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -13,7 +55,7 @@
         </div>
         <div class="ml-4 sm:ml-5 w-0 flex-1">
           <dl>
-            <dt class="text-sm font-medium text-gray-500 truncate">Taux de conformité</dt>
+            <dt class="text-sm font-medium text-gray-500 truncate">Compliance Rate</dt>
             <dd>
               <div class="text-base sm:text-lg font-medium text-gray-900">
                 <%= number_to_percentage(@conforming_rate, precision: 1) %>
@@ -26,7 +68,7 @@
     <div class="bg-gray-50 px-4 sm:px-5 py-2 sm:py-3">
       <div class="text-xs sm:text-sm">
         <span class="font-medium text-blue-700">
-          Basé sur <%= Analysis.where(status: 'completed').count %> analyses
+          Based on <%= Analysis.completed.count %> analyses
         </span>
       </div>
     </div>
@@ -41,7 +83,7 @@
         </div>
         <div class="ml-5 w-0 flex-1">
           <dl>
-            <dt class="text-sm font-medium text-gray-500 truncate">Analyses aujourd'hui</dt>
+            <dt class="text-sm font-medium text-gray-500 truncate">Today's Analyses</dt>
             <dd>
               <div class="text-lg font-medium text-gray-900"><%= Analysis.where('created_at >= ?', Date.today).count %></div>
             </dd>
@@ -52,37 +94,108 @@
     <div class="bg-gray-50 px-5 py-3">
       <div class="text-sm">
         <span class="font-medium text-green-700">
-          <% today_success_rate = Analysis.where('created_at >= ? AND status = ?', Date.today, 'completed').count > 0 ? 
-             (Analysis.where('created_at >= ? AND status = ? AND score >= ?', Date.today, 'completed', 0.85).count.to_f / 
-             Analysis.where('created_at >= ? AND status = ?', Date.today, 'completed').count * 100) : 0 %>
-          <%= number_to_percentage(today_success_rate, precision: 1) %> de conformité
+          <% today_success_rate = Analysis.where("analyses.created_at >= ?", Date.today)
+                                         .where(status: :completed)
+                                         .joins(:analysis_results)
+                                         .where("analysis_results.conformity_score >= ?", 0.85)
+                                         .exists? %>
+          <%= number_to_percentage(today_success_rate ? 100 : 0, precision: 1) %> compliance
         </span>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Analyses récentes -->
-<div class="mt-6 sm:mt-8">
-  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-4 sm:px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-      <div>
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Analyses récentes</h3>
-        <p class="mt-1 text-sm text-gray-500">Les 10 dernières analyses effectuées</p>
-      </div>
-      <%= link_to analyses_path, class: "mt-2 sm:mt-0 text-sm font-medium text-blue-600 hover:text-blue-500" do %>
-        Voir toutes les analyses <i class="fas fa-arrow-right ml-1"></i>
-      <% end %>
-    </div>
+<!-- Après les cartes de statistiques -->
+<div class="bg-white shadow overflow-hidden sm:rounded-lg mt-6">
+  <div class="px-4 py-5 sm:px-6">
+    <h2 class="text-xl font-semibold text-gray-900">Dataset Class Distribution</h2>
+  </div>
+  <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+    <div class="h-96">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Distribution Chart -->
+        <div class="bg-white p-4 rounded-lg">
+          <div class="flex flex-col space-y-4">
+            <% defect_counts = {
+              'SCRATCH' => 1142,
+              'BLOCK ETCH' => 580,
+              'PARTICLE' => 442,
+              'PO CONTAMINATION' => 397,
+              'COATING BAD' => 293,
+              'PIQ PARTICLE' => 281,
+              'SEZ BURNT' => 74
+            } %>
+            
+            <% max_count = defect_counts.values.max %>
+            <% defect_counts.each do |defect, count| %>
+              <div class="flex items-center space-x-2">
+                <div class="w-32 text-sm font-medium text-gray-600"><%= defect %></div>
+                <div class="flex-1">
+                  <div class="relative">
+                    <div class="h-4 bg-blue-100 rounded-full">
+                      <div class="h-4 bg-blue-500 rounded-full" style="width: <%= (count.to_f / max_count * 100).round %>%"></div>
+                    </div>
+                    <span class="absolute right-0 top-0 -mt-1 text-sm text-gray-600"><%= count %></span>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
 
-    <!-- Table responsive -->
+        <!-- Statistics -->
+        <div class="bg-gray-50 p-6 rounded-lg">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Distribution Statistics</h3>
+          <ul class="space-y-3 text-sm text-gray-600">
+            <li class="flex justify-between">
+              <span>Total Samples:</span>
+              <span class="font-medium">3,209</span>
+            </li>
+            <li class="flex justify-between">
+              <span>Most Common:</span>
+              <span class="font-medium">SCRATCH (1,142)</span>
+            </li>
+            <li class="flex justify-between">
+              <span>Least Common:</span>
+              <span class="font-medium">SEZ BURNT (74)</span>
+            </li>
+            <li class="flex justify-between">
+              <span>Average per Class:</span>
+              <span class="font-medium">~458</span>
+            </li>
+            <li class="border-t border-gray-200 pt-3 mt-3">
+              <p class="text-sm text-gray-500">
+                Note: This imbalanced distribution may affect model performance on less represented classes.
+                Consider this when interpreting detection results.
+              </p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Analyses récentes -->
+<div class="mt-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-semibold text-gray-900">Recent Analyses</h2>
+    <%= link_to analyses_path, class: "text-sm font-medium text-blue-600 hover:text-blue-500" do %>
+      View all analyses <i class="fas fa-arrow-right ml-1"></i>
+    <% end %>
+  </div>
+  
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Score</th>
+            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detections</th>
+            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Defect Type</th>
+            <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
             <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Date</th>
             <th scope="col" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
@@ -91,17 +204,33 @@
           <% if @recent_analyses.any? %>
             <% @recent_analyses.each do |analysis| %>
               <tr>
-                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   #<%= analysis.id %>
                 </td>
                 <td class="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= analysis_status_color(analysis.status) %>">
-                    <%= analysis.status %>
+                  <% 
+                    # Determine the real status based on API data
+                    real_status = if analysis.api_data.present? && analysis.api_data['success'] == true
+                                    :completed
+                                  elsif analysis.failed? && analysis.score.present? && analysis.score > 0
+                                    :completed
+                                  else
+                                    analysis.status.to_sym
+                                  end
+                  %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= analysis_status_color(real_status) %>">
+                    <%= real_status %>
                   </span>
                 </td>
-                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <%= analysis.api_data&.dig('result', 'detections')&.size || 0 %>
+                </td>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <%= defect_types(analysis) %>
+                </td>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <% if analysis.score %>
-                    <span class="<%= analysis.conforming? ? 'text-green-600' : 'text-red-600' %>">
+                    <span class="<%= analysis.score >= 0.5 ? 'text-green-600' : 'text-red-600' %>">
                       <%= number_to_percentage(analysis.score * 100, precision: 1) %>
                     </span>
                   <% else %>
@@ -114,20 +243,58 @@
                 <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <%= link_to analysis_path(analysis), class: "text-blue-600 hover:text-blue-900" do %>
                     <i class="fas fa-eye"></i>
-                    <span class="hidden sm:inline ml-1">Voir</span>
+                    <span class="hidden sm:inline ml-1">View</span>
                   <% end %>
                 </td>
               </tr>
             <% end %>
           <% else %>
             <tr>
-              <td colspan="5" class="px-3 sm:px-6 py-4 text-center text-sm text-gray-500">
-                Aucune analyse récente
+              <td colspan="7" class="px-3 sm:px-6 py-4 text-center text-sm text-gray-500">
+                No recent analyses
               </td>
             </tr>
           <% end %>
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- Métriques en 2x2 -->
+<div class="grid grid-cols-2 gap-4 mb-6">
+  <!-- Taux de succès -->
+  <div class="bg-white overflow-hidden shadow rounded-lg p-5">
+    <h3 class="text-sm font-medium text-gray-500">Average Confidence</h3>
+    <div class="mt-2 text-2xl font-semibold">
+      <%= number_to_percentage(Analysis.today_success_rate, precision: 1) %>
+    </div>
+    <p class="text-xs text-gray-500 mt-1">
+      Model's average confidence level in its detections
+    </p>
+  </div>
+
+  <!-- Taux de conformité -->
+  <div class="bg-white overflow-hidden shadow rounded-lg p-5">
+    <h3 class="text-sm font-medium text-gray-500">Taux de conformité aujourd'hui</h3>
+    <div class="mt-2 text-2xl font-semibold">
+      <%= number_to_percentage(Analysis.today_conformity_rate, precision: 1) %>
+    </div>
+  </div>
+
+  <!-- Taux de défauts -->
+  <div class="bg-white overflow-hidden shadow rounded-lg p-5">
+    <h3 class="text-sm font-medium text-gray-500">Taux de défauts aujourd'hui</h3>
+    <div class="mt-2 text-2xl font-semibold">
+      <%= number_to_percentage(Analysis.today_defect_rate, precision: 1) %>
+    </div>
+  </div>
+
+  <!-- Types de défauts -->
+  <div class="bg-white overflow-hidden shadow rounded-lg p-5">
+    <h3 class="text-sm font-medium text-gray-500">Types de défauts</h3>
+    <div class="mt-2 text-2xl font-semibold">
+      <%= Analysis.today.with_defects.count %>
     </div>
   </div>
 </div>

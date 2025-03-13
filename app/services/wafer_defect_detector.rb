@@ -1,52 +1,41 @@
 require 'uri'
 require 'net/http'
 require 'json'
+require 'tempfile'
 
 class WaferDefectDetector
-  API_URL = 'http://localhost:8080/detect'
-  
+  API_URL = 'http://localhost:8080/detect'.freeze
+
   def self.detect(image_file, confidence = 0.25)
-    # Préparer la requête multipart
-    uri = URI.parse(API_URL)
-    request = Net::HTTP::Post.new(uri)
-    
-    # Créer une requête multipart
-    form_data = [
-      ['confidence', confidence.to_s],
-      ['file', image_file, { filename: image_file.original_filename }]
-    ]
-    
-    request.set_form(form_data, 'multipart/form-data')
-    
-    # Envoyer la requête
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.open_timeout = 30
-    http.read_timeout = 30
-    
-    begin
-      response = http.request(request)
-      
-      # Vérifier si la requête a réussi
-      unless response.is_a?(Net::HTTPSuccess)
-        Rails.logger.error("Erreur API: #{response.code} - #{response.body}")
-        raise "L'API a retourné une erreur: #{response.code}"
-      end
-      
-      # Parser la réponse JSON
-      result = JSON.parse(response.body)
-      
-      if result['success']
-        return result
-      else
-        Rails.logger.error("Erreur de détection: #{result['error']}")
-        raise "Erreur lors de la détection des défauts: #{result['error']}"
-      end
-    rescue JSON::ParserError => e
-      Rails.logger.error("Erreur de parsing JSON: #{e.message}")
-      raise "Erreur lors du parsing de la réponse: #{e.message}"
-    rescue => e
-      Rails.logger.error("Erreur de connexion: #{e.message}")
-      raise "Erreur de connexion à l'API: #{e.message}"
+    image_path = prepare_image(image_file)
+    model = load_model
+
+    results = perform_detection(model, image_path, confidence)
+    process_results(results, image_path)
+  end
+
+  def self.prepare_image(image_file)
+    if image_file.is_a?(String)
+      image_file
+    else
+      temp_file = Tempfile.new(['upload', '.jpg'])
+      temp_file.binmode
+      temp_file.write(image_file.read)
+      temp_file.close
+      temp_file.path
     end
   end
-end 
+
+  def self.load_model
+    model_path = Rails.root.join('lib/models/best.pt')
+    YOLO.new(model_path.to_s)
+  end
+
+  def self.perform_detection(model, image_path, confidence)
+    model.predict(image_path, conf: confidence)
+  end
+
+  def self.process_results(results, image_path)
+    # Traitement des résultats...
+  end
+end

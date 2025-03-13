@@ -1,34 +1,58 @@
 <div class="container mx-auto px-4 py-8">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Nouvelle analyse</h1>
-    <%= link_to "Retour aux analyses", analyses_path, class: "text-blue-600 hover:text-blue-800" %>
+    <h1 class="text-3xl font-bold">New Analysis</h1>
+    <%= link_to analyses_path, class: "text-blue-600 hover:text-blue-900" do %>
+      <i class="fas fa-arrow-left mr-1"></i> Back to analyses
+    <% end %>
   </div>
   
-  <div class="bg-white rounded-lg shadow p-6">
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
+    <h2 class="text-lg font-medium text-gray-900 mb-4">Upload an image for analysis</h2>
+    
     <%= form_with(model: @analysis, local: true, class: "space-y-6") do |form| %>
       <% if @analysis.errors.any? %>
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-          <h2 class="font-bold mb-2">
-            <%= pluralize(@analysis.errors.count, "erreur") %> ont empêché cette analyse d'être enregistrée:
-          </h2>
-          <ul class="list-disc pl-5">
-            <% @analysis.errors.full_messages.each do |message| %>
-              <li><%= message %></li>
-            <% end %>
-          </ul>
+        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-exclamation-circle text-red-400"></i>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-red-800">
+                <%= pluralize(@analysis.errors.count, "error") %> prohibited this analysis from being saved:
+              </h3>
+              <div class="mt-2 text-sm text-red-700">
+                <ul class="list-disc pl-5 space-y-1">
+                  <% @analysis.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       <% end %>
       
       <div>
-        <%= form.label :image, "Image à analyser", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.file_field :image, class: "mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm", accept: "image/*", required: true %>
-        <p class="mt-2 text-sm text-gray-500">
-          Sélectionnez une image du pacemaker à analyser. Formats acceptés: JPG, PNG.
-        </p>
+        <%= form.label :image, "Image", class: "block text-sm font-medium text-gray-700" %>
+        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+          <div class="space-y-1 text-center">
+            <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
+            <div class="flex text-sm text-gray-600">
+              <label for="analysis_image" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                <span>Upload a file</span>
+                <%= form.file_field :image, class: "sr-only", accept: "image/*", required: true %>
+              </label>
+              <p class="pl-1">or drag and drop</p>
+            </div>
+            <p class="text-xs text-gray-500">
+              PNG, JPG, GIF up to 10MB
+            </p>
+          </div>
+        </div>
       </div>
       
       <div class="flex justify-end">
-        <%= form.submit "Lancer l'analyse", class: "bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" %>
+        <%= form.submit "Run Analysis", class: "inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
       </div>
     <% end %>
   </div>

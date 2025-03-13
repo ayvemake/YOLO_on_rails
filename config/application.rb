@@ -26,5 +26,10 @@ module PacemakerVisionNew
 
     # Utiliser Sidekiq comme adaptateur de file d'attente par défaut
     config.active_job.queue_adapter = :sidekiq
+
+    # Ajouter le répertoire concerns à l'autoload path
+    config.autoload_paths += %W(#{config.root}/app/jobs/concerns)
+
+    config.application_name = "YOLOv8 wafer defect"
   end
 end

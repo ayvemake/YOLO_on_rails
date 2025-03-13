@@ -29,3 +29,10 @@
 
 en:
   hello: "Hello world"
+  analyses:
+    create:
+      success: "Analysis was successfully created."
+  defect_detections:
+    create:
+      success: "Defect analysis completed successfully."
+      select_image: "Please select an image to analyze."

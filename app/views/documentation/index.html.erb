@@ -11,12 +11,10 @@
     <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
       <div class="prose max-w-none">
         <p>
-          <strong>Pacemaker Vision</strong> is an automated quality control system designed for the inspection of pacemaker wafers 
-          in medical device manufacturing. The system uses computer vision and deep learning to detect and classify 
-          surface defects that could compromise the functionality, reliability, or safety of pacemaker components.
+          <strong>YOLOv8 wafer defect</strong> is an automated quality control system designed for wafer inspection in manufacturing. The system uses computer vision and deep learning (YOLOv8 model trained on a custom dataset) to detect and classify surface defects.
         </p>
         <p class="mt-4">
-          This software is intended for use by quality control engineers and production managers in medical device 
+          This software is intended for use by quality control engineers and production managers in
           manufacturing facilities. It provides:
         </p>
         <ul class="list-disc pl-5 mt-2">
@@ -27,13 +25,96 @@
           <li>Integration with production workflows via REST API</li>
         </ul>
         <p class="mt-4">
-          By automating the inspection process, Pacemaker Vision helps ensure consistent quality standards, 
+          By automating the inspection process, YOLOv8 wafer defect helps ensure consistent quality standards, 
           reduces human error, increases throughput, and provides documentation for regulatory compliance.
         </p>
       </div>
     </div>
   </div>
 
+
+  <!-- Analysis Interpretation Guide -->
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg mt-8">
+    <div class="px-4 py-5 sm:px-6">
+      <h2 class="text-xl font-semibold text-gray-900">Analysis Interpretation Guide</h2>
+    </div>
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+      <div class="space-y-6">
+        <div>
+          <p class="text-base text-gray-700 mb-4">
+            Our analysis system uses YOLOv8 artificial intelligence to detect defects on wafers. 
+            Here's how to interpret the results:
+          </p>
+
+          <h3 class="text-lg font-medium text-gray-900 mb-3">Analysis Table Columns</h3>
+          <ul class="list-disc pl-5 space-y-2 text-sm text-gray-700">
+            <li><strong>ID:</strong> Unique identifier for the analysis</li>
+            <li><strong>Status:</strong> Current state of the analysis (completed, processing, failed)</li>
+            <li><strong>Confidence:</strong> Model's confidence level in its detections (≥50% in green indicates high confidence)</li>
+            <li><strong>Detections:</strong> Number of elements detected in the image</li>
+            <li><strong>Defect Type:</strong> Categories of defects detected</li>
+            <li><strong>Date:</strong> Date and time of the analysis</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-medium text-gray-900 mb-3">Defect Categories</h3>
+          <p class="text-sm text-gray-700 mb-2">The system detects and classifies defects into 7 categories:</p>
+          <div class="bg-gray-50 rounded-lg p-4">
+            <ul class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <li class="flex items-center space-x-2">
+                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span>BLOCK ETCH</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span>COATING BAD</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span>PARTICLE</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span>PIQ PARTICLE</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span>PO CONTAMINATION</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span>SCRATCH</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span>SEZ BURNT</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-medium text-gray-900 mb-3">Confidence Score Interpretation</h3>
+          <div class="bg-gray-50 rounded-lg p-4">
+            <ul class="space-y-3">
+              <li class="flex items-center text-sm">
+                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                <strong class="w-24">≥ 50%:</strong>
+                <span class="text-green-600">High confidence - The model is confident in its detections</span>
+              </li>
+              <li class="flex items-center text-sm">
+                <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                <strong class="w-24">< 50%:</strong>
+                <span class="text-red-600">Low confidence - The model is less certain about its detections</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <!-- Reference to Scientific Paper -->
   <div class="bg-white shadow overflow-hidden sm:rounded-lg">
     <div class="px-4 py-5 sm:px-6">
@@ -63,17 +144,27 @@
             <tr>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Application Domain</td>
               <td class="px-6 py-4 text-sm text-gray-500">Printed Circuit Boards (PCBs)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Pacemaker Wafers</td>
+              <td class="px-6 py-4 text-sm text-gray-500">Printed Circuit Boards (PCBs)</td>
             </tr>
             <tr>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Model Architecture</td>
               <td class="px-6 py-4 text-sm text-gray-500">Co-DETR and YOLOv6-L6</td>
-              <td class="px-6 py-4 text-sm text-gray-500">YOLOv8s (small) with CSPDarknet backbone, PANet neck, and Decoupled Head</td>
+              <td class="px-6 py-4 text-sm text-gray-500">YOLOv8s (small) with CSPDarknet backbone</td>
             </tr>
             <tr>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Dataset Size</td>
               <td class="px-6 py-4 text-sm text-gray-500">10,259 images with 20,276 defects</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Same dataset structure with 7 defect categories specific to wafers</td>
+              <td class="px-6 py-4 text-sm text-gray-500">3,209 defects across 7 categories:
+                <ul class="list-disc pl-4 mt-1">
+                  <li>SCRATCH: 1,142</li>
+                  <li>BLOCK ETCH: 580</li>
+                  <li>PARTICLE: 442</li>
+                  <li>PO CONTAMINATION: 397</li>
+                  <li>COATING BAD: 293</li>
+                  <li>PIQ PARTICLE: 281</li>
+                  <li>SEZ BURNT: 74</li>
+                </ul>
+              </td>
             </tr>
             <tr>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Defect Categories</td>
@@ -81,61 +172,21 @@
               <td class="px-6 py-4 text-sm text-gray-500">7 categories (BLOCK ETCH, COATING BAD, PARTICLE, PIQ PARTICLE, PO CONTAMINATION, SCRATCH, SEZ BURNT)</td>
             </tr>
             <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Image Resolution</td>
-              <td class="px-6 py-4 text-sm text-gray-500">226 × 226 pixels</td>
-              <td class="px-6 py-4 text-sm text-gray-500">640 × 640 pixels</td>
-            </tr>
-            <tr>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Training Parameters</td>
               <td class="px-6 py-4 text-sm text-gray-500">Various configurations</td>
-              <td class="px-6 py-4 text-sm text-gray-500">30 epochs, batch size 16, SGD optimizer, transfer learning from pre-trained weights</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Data Augmentation</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Basic augmentation</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Horizontal flip (50%), translation (10%), scaling (50%), mosaic (100%), random erasure (40%)</td>
+              <td class="px-6 py-4 text-sm text-gray-500">30 epochs, batch size 16, SGD optimizer</td>
             </tr>
             <tr>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Performance</td>
               <td class="px-6 py-4 text-sm text-gray-500">mAP@0.5 of 0.848-0.851</td>
-              <td class="px-6 py-4 text-sm text-gray-500">mAP@0.5 of 0.45516, mAP@0.5:0.95 of 0.27061</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Inference Speed</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Not specified</td>
-              <td class="px-6 py-4 text-sm text-gray-500">~11.9ms inference time, ~322.6ms total processing time, ~3.1 FPS</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Integration</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Standalone research</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Integrated with production workflow and REST API</td>
+              <td class="px-6 py-4 text-sm text-gray-500">mAP@0.5 of 0.45516</td>
             </tr>
           </tbody>
         </table>
         <p class="mt-4">
-          While we've adapted the approach for our specific use case in pacemaker manufacturing, 
-          we acknowledge the valuable contribution of the original research in establishing methodologies 
-          for surface defect detection using deep learning.
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Introduction -->
-  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6">
-      <h2 class="text-xl font-semibold text-gray-900">Overview</h2>
-    </div>
-    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
-      <div class="prose max-w-none">
-        <p>
-          Our defect detection system uses YOLOv8, a state-of-the-art deep learning model, 
-          for automatic inspection of pacemaker wafers. This documentation details the architecture, 
-          operation, and configuration of the system.
-        </p>
-        <p class="mt-4">
-          The system can identify and locate several common defect types: 
-          BLOCK ETCH, COATING BAD, PARTICLE, PIQ PARTICLE, PO CONTAMINATION, SCRATCH, and SEZ BURNT.
+          While we've used the same PCB dataset as the original research, we've implemented a different model architecture 
+          (YOLOv8) and training configuration. Our approach focuses on optimizing for real-time detection while maintaining 
+          acceptable accuracy levels.
         </p>
       </div>
     </div>
@@ -145,62 +196,7 @@
   <div class="bg-white shadow overflow-hidden sm:rounded-lg">
     <div class="px-4 py-5 sm:px-6">
       <h2 class="text-xl font-semibold text-gray-900">Wafer Defect Classification</h2>
-    </div>
     <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Main Category</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subcategories</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" rowspan="3">Copper Residue</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Short (SH)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Unwanted connection between conductors</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Spur (SP)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Irregular protrusions on conductor edges</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Spurious copper (SC)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Unwanted copper residue on base material</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" rowspan="3">Copper Deficiency</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Open (OP)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Interruption in conductor connection path</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Mouse bite (MB)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Small depressions or cracks at conductor edges</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Hole breakout (HB)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Hole center significantly deviates from pad</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Scratches</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Conductor scratch (CS)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Linear defects on conductors due to scratches</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" rowspan="2">Foreign Objects</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Conductor foreign object (CFO)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Impurities, bubbles, dirt on conductors</td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Base material foreign object (BMFO)</td>
-              <td class="px-6 py-4 text-sm text-gray-500">Foreign materials on base material</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
       <h3 class="text-lg font-medium mt-8 mb-4">Detection Performance by Class</h3>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
