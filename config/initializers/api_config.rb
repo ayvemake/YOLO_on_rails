@@ -1,0 +1,1 @@
+Rails.application.config.api_url = ENV.fetch('API_URL', 'http://localhost:8000') 

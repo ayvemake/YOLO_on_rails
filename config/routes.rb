@@ -28,14 +28,9 @@ Rails.application.routes.draw do
   # Route pour les WebSockets
   mount ActionCable.server => '/cable'
 
-  # Monter l'interface Web de Sidekiq avec authentification en production
-  if Rails.env.production?
-    authenticate :user, lambda { |u| u.admin? } do
-      mount Sidekiq::Web => '/sidekiq'
-    end
-  else
-    mount Sidekiq::Web => '/sidekiq'
-  end
+  # Mount Sidekiq web UI
+  # You might want to add authentication here
+  mount Sidekiq::Web => '/sidekiq'
 
   get 'documentation', to: 'documentation#index'
 end

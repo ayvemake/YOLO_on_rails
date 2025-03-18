@@ -4,8 +4,9 @@
 :verbose: false
 :queues:
   - default
-  - active_storage_analysis
   - mailers
+  - active_storage_analysis
+  - active_storage_purge
 development:
   :concurrency: 5
 production:
